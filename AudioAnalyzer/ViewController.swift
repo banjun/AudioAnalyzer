@@ -32,7 +32,7 @@ class ViewController: NSViewController {
     private lazy var monitorCheckbox = NSButton(checkboxWithTitle: "Monitor", target: nil, action: nil) ※ {
         $0.bind(.value, to: monitorVolumeSlider, withKeyPath: #keyPath(NSSlider.isHidden), options: [.valueTransformerName: NSValueTransformerName.negateBooleanTransformerName])
     }
-    private lazy var monitorVolumeSlider = NSSlider(value: 0.5, minValue: 0, maxValue: 1, target: nil, action: nil) ※ {
+    private lazy var monitorVolumeSlider = NSSlider(value: 0.5, minValue: 0, maxValue: 2, target: nil, action: nil) ※ {
         $0.isHidden = true
         $0.isContinuous = true
         $0.bind(.value, to: self, withKeyPath: #keyPath(monitorVolumeSliderValue), options: nil)
@@ -40,6 +40,7 @@ class ViewController: NSViewController {
     @Published @objc private var monitorVolumeSliderValue: Float = 0.5
 
     private let levelsStackView = ChannelLevelStackView()
+    private let fftView = FFTView()
 
     private var session: CaptureSession? {
         didSet {
@@ -57,6 +58,10 @@ class ViewController: NSViewController {
                 session.$levels.removeDuplicates().receive(on: DispatchQueue.main)
                     .map {$0.enumerated().map {(String($0.offset + 1), $0.element)}}
                     .assign(to: \.values, on: levelsStackView)
+                    .store(in: &cancellables)
+
+                session.$fftValues.receive(on: DispatchQueue.main)
+                    .assign(to: \.value, on: fftView)
                     .store(in: &cancellables)
 
                 session.previewVolume.value = monitorVolumeSliderValue
@@ -84,20 +89,21 @@ class ViewController: NSViewController {
             "phones": discoversPhonesCheckbox,
             "performance": performanceLabel ※ {
                 $0.setContentCompressionResistancePriority(.init(9), for: .horizontal)
-                $0.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
+                $0.setContentCompressionResistancePriority(.dragThatCanResizeWindow, for: .vertical)
             },
             "monitorCheckbox": monitorCheckbox,
             "monitorVolume": monitorVolumeSlider,
             "levels": levelsStackView,
+            "fft": fftView,
         ])
         autolayout("H:|-p-[inputs]-p-[phones]-(>=p)-|")
         autolayout("H:|-p-[performance]-p-|")
         autolayout("H:|-p-[monitorCheckbox]-p-[monitorVolume]-p-|")
         autolayout("H:|-p-[levels]-p-|")
-        autolayout("V:|-p-[inputs]-p-[performance]")
-        autolayout("V:|-p-[phones(inputs)]-p-[performance]")
-        autolayout("V:[performance]-p-[monitorCheckbox]-p-[levels]-p-|")
-        autolayout("V:[performance]-p-[monitorVolume]-p-[levels]-p-|")
+        autolayout("H:|-p-[fft]-p-|")
+        autolayout("V:|-p-[inputs]-p-[performance]-p-[monitorCheckbox]-p-[levels]")
+        autolayout("V:|-p-[phones(inputs)]-p-[performance]-p-[monitorVolume]-p-[levels]")
+        autolayout("V:[levels]-p-[fft(>=64)]-p-|")
 
         AudioDevice.shared.$inputDevices
             .prepend(AudioDevice.shared.inputDevices)
