@@ -43,7 +43,7 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
         session.addOutput(output)
         
         $sample.skipNil().combinePrevious()
-            .throttle(for: 0.016, scheduler: RunLoop.main, latest: true)
+            .throttle(for: 0.016, scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] prev, current in
                 guard let self = self else { return }
                 let duration = String(format: "%.3f", current.buffer.duration.seconds)

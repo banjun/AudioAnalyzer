@@ -32,10 +32,10 @@ class ViewController: NSViewController {
     }
 
     private lazy var monitorCheckbox = NSButton(checkboxWithTitle: "Monitor", target: nil, action: nil) ※ {
-        $0.bind(.value, to: monitorVolumeSlider, withKeyPath: #keyPath(NSSlider.isEnabled), options: nil)
+        $0.bind(.value, to: monitorVolumeSlider, withKeyPath: #keyPath(NSSlider.isHidden), options: [.valueTransformerName: NSValueTransformerName.negateBooleanTransformerName])
     }
     private lazy var monitorVolumeSlider = NSSlider(value: 0.5, minValue: 0, maxValue: 1, target: nil, action: nil) ※ {
-        $0.isEnabled = false
+        $0.isHidden = true
         $0.isContinuous = true
         $0.bind(.value, to: self, withKeyPath: #keyPath(monitorVolumeSliderValue), options: nil)
     }
@@ -49,14 +49,14 @@ class ViewController: NSViewController {
             performanceLabel.stringValue = ""
             levelsStackView.values.removeAll()
             monitorCheckbox.state = .off
-            monitorVolumeSlider.isEnabled = false
+            monitorVolumeSlider.isHidden = true
 
             if let session = session {
                 session.$performance.removeDuplicates().receive(on: RunLoop.main)
                     .assign(to: \.stringValue, on: performanceLabel)
                     .store(in: &cancellables)
 
-                session.$levels.removeDuplicates().receive(on: RunLoop.main)
+                session.$levels.removeDuplicates().receive(on: DispatchQueue.main)
                     .map {$0.enumerated().map {(String($0.offset + 1), $0.element)}}
                     .assign(to: \.values, on: levelsStackView)
                     .store(in: &cancellables)
