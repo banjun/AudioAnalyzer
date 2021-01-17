@@ -3,17 +3,25 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EA134F2025B455AE0081F834 /* Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA134F1F25B455AE0081F834 /* Combine.swift */; };
+		EA134F2325B45F0D0081F834 /* CannelLevelIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA134F2225B45F0D0081F834 /* CannelLevelIndicator.swift */; };
 		EA371BFB25B08EFA001476F9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371BFA25B08EFA001476F9 /* AppDelegate.swift */; };
 		EA371BFD25B08EFA001476F9 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371BFC25B08EFA001476F9 /* ViewController.swift */; };
 		EA371BFF25B08EFC001476F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EA371BFE25B08EFC001476F9 /* Assets.xcassets */; };
 		EA371C0225B08EFC001476F9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EA371C0025B08EFC001476F9 /* Main.storyboard */; };
+		EA371C0C25B08F45001476F9 /* AudioDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371C0B25B08F45001476F9 /* AudioDevice.swift */; };
+		EA371C1025B0933F001476F9 /* Ikemen in Frameworks */ = {isa = PBXBuildFile; productRef = EA371C0F25B0933F001476F9 /* Ikemen */; };
+		EA371C1425B0949C001476F9 /* NorthLayout in Frameworks */ = {isa = PBXBuildFile; productRef = EA371C1325B0949C001476F9 /* NorthLayout */; };
+		EA371C1925B097C7001476F9 /* CaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371C1825B097C7001476F9 /* CaptureSession.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		EA134F1F25B455AE0081F834 /* Combine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Combine.swift; sourceTree = "<group>"; };
+		EA134F2225B45F0D0081F834 /* CannelLevelIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CannelLevelIndicator.swift; sourceTree = "<group>"; };
 		EA371BF725B08EFA001476F9 /* AudioAnalyzer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AudioAnalyzer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EA371BFA25B08EFA001476F9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		EA371BFC25B08EFA001476F9 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -21,6 +29,8 @@
 		EA371C0125B08EFC001476F9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		EA371C0325B08EFC001476F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EA371C0425B08EFC001476F9 /* AudioAnalyzer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AudioAnalyzer.entitlements; sourceTree = "<group>"; };
+		EA371C0B25B08F45001476F9 /* AudioDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDevice.swift; sourceTree = "<group>"; };
+		EA371C1825B097C7001476F9 /* CaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSession.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -28,6 +38,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA371C1425B0949C001476F9 /* NorthLayout in Frameworks */,
+				EA371C1025B0933F001476F9 /* Ikemen in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,6 +67,10 @@
 			children = (
 				EA371BFA25B08EFA001476F9 /* AppDelegate.swift */,
 				EA371BFC25B08EFA001476F9 /* ViewController.swift */,
+				EA371C0B25B08F45001476F9 /* AudioDevice.swift */,
+				EA371C1825B097C7001476F9 /* CaptureSession.swift */,
+				EA134F2225B45F0D0081F834 /* CannelLevelIndicator.swift */,
+				EA134F1F25B455AE0081F834 /* Combine.swift */,
 				EA371BFE25B08EFC001476F9 /* Assets.xcassets */,
 				EA371C0025B08EFC001476F9 /* Main.storyboard */,
 				EA371C0325B08EFC001476F9 /* Info.plist */,
@@ -79,6 +95,10 @@
 			dependencies = (
 			);
 			name = AudioAnalyzer;
+			packageProductDependencies = (
+				EA371C0F25B0933F001476F9 /* Ikemen */,
+				EA371C1325B0949C001476F9 /* NorthLayout */,
+			);
 			productName = AudioAnalyzer;
 			productReference = EA371BF725B08EFA001476F9 /* AudioAnalyzer.app */;
 			productType = "com.apple.product-type.application";
@@ -106,6 +126,10 @@
 				Base,
 			);
 			mainGroup = EA371BEE25B08EFA001476F9;
+			packageReferences = (
+				EA371C0E25B0933F001476F9 /* XCRemoteSwiftPackageReference "ikemen" */,
+				EA371C1225B0949C001476F9 /* XCRemoteSwiftPackageReference "NorthLayout" */,
+			);
 			productRefGroup = EA371BF825B08EFA001476F9 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -133,7 +157,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				EA371BFD25B08EFA001476F9 /* ViewController.swift in Sources */,
+				EA134F2325B45F0D0081F834 /* CannelLevelIndicator.swift in Sources */,
 				EA371BFB25B08EFA001476F9 /* AppDelegate.swift in Sources */,
+				EA371C0C25B08F45001476F9 /* AudioDevice.swift in Sources */,
+				EA134F2025B455AE0081F834 /* Combine.swift in Sources */,
+				EA371C1925B097C7001476F9 /* CaptureSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -326,6 +354,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		EA371C0E25B0933F001476F9 /* XCRemoteSwiftPackageReference "ikemen" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/banjun/ikemen.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.7.0;
+			};
+		};
+		EA371C1225B0949C001476F9 /* XCRemoteSwiftPackageReference "NorthLayout" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/banjun/NorthLayout.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EA371C0F25B0933F001476F9 /* Ikemen */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EA371C0E25B0933F001476F9 /* XCRemoteSwiftPackageReference "ikemen" */;
+			productName = Ikemen;
+		};
+		EA371C1325B0949C001476F9 /* NorthLayout */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EA371C1225B0949C001476F9 /* XCRemoteSwiftPackageReference "NorthLayout" */;
+			productName = NorthLayout;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = EA371BEF25B08EFA001476F9 /* Project object */;
 }

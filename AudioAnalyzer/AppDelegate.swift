@@ -9,18 +9,15 @@ import Cocoa
 
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
-
-    
-
-
-    func applicationDidFinishLaunching(_ aNotification: Notification) {
-        // Insert code here to initialize your application
+    @IBAction func newDocument(_ sender: AnyObject) {
+        NSWindowController(window: NSWindow(contentViewController: ViewController())).showWindow(nil)
     }
 
-    func applicationWillTerminate(_ aNotification: Notification) {
-        // Insert code here to tear down your application
+    func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool { true }
+
+    func applicationOpenUntitledFile(_ sender: NSApplication) -> Bool {
+        newDocument(self)
+        return true
     }
-
-
 }
 
