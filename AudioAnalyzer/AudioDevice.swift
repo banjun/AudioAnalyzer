@@ -5,13 +5,15 @@ import CoreMediaIO
 
 final class AudioDevice {
     static let shared: AudioDevice = .init()
+
     @Published private(set) var inputDevices: [AVCaptureDevice] = []
     let discoversPhones: CurrentValueSubject<Bool, Never> = .init(true)
     private var cancellables: Set<AnyCancellable> = []
 
     private init() {
-        NotificationCenter.default.addObserver(forName: .AVCaptureDeviceWasConnected, object: nil, queue: nil) { [weak self] _ in self?.disoverDevices() }
-        NotificationCenter.default.addObserver(forName: .AVCaptureDeviceWasDisconnected, object: nil, queue: nil) { [weak self] _ in self?.disoverDevices() }
+        Publishers.Merge(NotificationCenter.default.publisher(for: .AVCaptureDeviceWasConnected),
+                         NotificationCenter.default.publisher(for: .AVCaptureDeviceWasDisconnected))
+            .sink {[weak self] _ in self?.disoverDevices()}.store(in: &cancellables)
         discoversPhones.removeDuplicates().sink { [unowned self] discoversPhones in
             var prop = CMIOObjectPropertyAddress(
                 mSelector: CMIOObjectPropertySelector(kCMIOHardwarePropertyAllowScreenCaptureDevices),

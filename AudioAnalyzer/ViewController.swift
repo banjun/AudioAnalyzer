@@ -4,9 +4,7 @@ import Ikemen
 import Combine
 
 class ViewController: NSViewController {
-    deinit {
-        NSLog("%@", "deinit \(self.debugDescription)")
-    }
+    deinit {NSLog("%@", "deinit \(self.debugDescription)")}
 
     private lazy var audioInputPopup: NSPopUpButton = .init() ※ {
         $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfAudioInputPopup), options: nil)

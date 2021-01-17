@@ -2,6 +2,8 @@ import AVKit
 import Combine
 
 final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
+    deinit {NSLog("%@", "deinit \(self.debugDescription)")}
+    
     private let device: AVCaptureDevice
     private let session: AVCaptureSession
     private let input: AVCaptureDeviceInput
