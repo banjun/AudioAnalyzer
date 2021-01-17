@@ -21,7 +21,7 @@ class ViewController: NSViewController {
         }
     }
 
-    private let discoversPhonesCheckbox: NSButton = .init(checkboxWithTitle: "Includes Mobiles", target: nil, action: nil)
+    private let discoversPhonesCheckbox = NSButton(checkboxWithTitle: "Includes Mobiles", target: nil, action: nil)
 
     private let performanceLabel = NSTextField() ※ {
         $0.isSelectable = true
@@ -31,6 +31,16 @@ class ViewController: NSViewController {
         $0.maximumNumberOfLines = 0
     }
 
+    private lazy var monitorCheckbox = NSButton(checkboxWithTitle: "Monitor", target: nil, action: nil) ※ {
+        $0.bind(.value, to: monitorVolumeSlider, withKeyPath: #keyPath(NSSlider.isEnabled), options: nil)
+    }
+    private lazy var monitorVolumeSlider = NSSlider(value: 0.5, minValue: 0, maxValue: 1, target: nil, action: nil) ※ {
+        $0.isEnabled = false
+        $0.isContinuous = true
+        $0.bind(.value, to: self, withKeyPath: #keyPath(monitorVolumeSliderValue), options: nil)
+    }
+    @Published @objc private var monitorVolumeSliderValue: Float = 0.5
+
     private let levelsStackView = ChannelLevelStackView()
 
     private var session: CaptureSession? {
@@ -38,17 +48,26 @@ class ViewController: NSViewController {
             oldValue?.stopRunning()
             performanceLabel.stringValue = ""
             levelsStackView.values.removeAll()
+            monitorCheckbox.state = .off
+            monitorVolumeSlider.isEnabled = false
 
-            session?.$performance.removeDuplicates().receive(on: RunLoop.main)
-                .assign(to: \.stringValue, on: performanceLabel)
-                .store(in: &cancellables)
+            if let session = session {
+                session.$performance.removeDuplicates().receive(on: RunLoop.main)
+                    .assign(to: \.stringValue, on: performanceLabel)
+                    .store(in: &cancellables)
 
-            session?.$levels.removeDuplicates().receive(on: RunLoop.main)
-                .map {$0.enumerated().map {(String($0.offset + 1), $0.element)}}
-                .assign(to: \.values, on: levelsStackView)
-                .store(in: &cancellables)
+                session.$levels.removeDuplicates().receive(on: RunLoop.main)
+                    .map {$0.enumerated().map {(String($0.offset + 1), $0.element)}}
+                    .assign(to: \.values, on: levelsStackView)
+                    .store(in: &cancellables)
 
-            session?.startRunning()
+                session.previewVolume.value = monitorVolumeSliderValue
+                $monitorVolumeSliderValue.removeDuplicates()
+                    .subscribe(session.previewVolume)
+                    .store(in: &cancellables)
+
+                session.startRunning()
+            }
         }
     }
 
@@ -56,6 +75,7 @@ class ViewController: NSViewController {
 
     override func loadView() {
         view = NSView()
+        _ = monitorCheckbox
     }
 
     override func viewDidLoad() {
@@ -68,14 +88,18 @@ class ViewController: NSViewController {
                 $0.setContentCompressionResistancePriority(.init(9), for: .horizontal)
                 $0.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
             },
+            "monitorCheckbox": monitorCheckbox,
+            "monitorVolume": monitorVolumeSlider,
             "levels": levelsStackView,
         ])
         autolayout("H:|-p-[inputs]-p-[phones]-(>=p)-|")
         autolayout("H:|-p-[performance]-p-|")
+        autolayout("H:|-p-[monitorCheckbox]-p-[monitorVolume]-p-|")
         autolayout("H:|-p-[levels]-p-|")
         autolayout("V:|-p-[inputs]-p-[performance]")
         autolayout("V:|-p-[phones(inputs)]-p-[performance]")
-        autolayout("V:[performance]-p-[levels]-p-|")
+        autolayout("V:[performance]-p-[monitorCheckbox]-p-[levels]-p-|")
+        autolayout("V:[performance]-p-[monitorVolume]-p-[levels]-p-|")
 
         AudioDevice.shared.$inputDevices
             .prepend(AudioDevice.shared.inputDevices)
@@ -106,6 +130,16 @@ class ViewController: NSViewController {
                 }
             }
             .subscribe(AudioDevice.shared.discoversPhones)
+            .store(in: &cancellables)
+
+        monitorCheckbox.cell!.publisher(for: \.state, options: [.new])
+            .map {
+                switch $0 {
+                case .on: return true
+                default: return false
+                }
+            }
+            .sink { [unowned self] in session?.enablesMonitor = $0 }
             .store(in: &cancellables)
     }
 }

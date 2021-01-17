@@ -6,6 +6,18 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
     private let session: AVCaptureSession
     private let input: AVCaptureDeviceInput
     private let output: AVCaptureAudioDataOutput
+    private var previewOutput: AVCaptureAudioPreviewOutput? {
+        didSet {
+            if let oldValue = oldValue {
+                session.removeOutput(oldValue)
+            }
+            if let newValue = previewOutput {
+                newValue.volume = previewVolume.value
+                session.addOutput(newValue)
+            }
+        }
+    }
+    let previewVolume: CurrentValueSubject<Float, Never> = .init(0.5)
     private let audioQueue = DispatchQueue(label: "CaptureSession")
 
     private var cancellables = Set<AnyCancellable>()
@@ -13,6 +25,11 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
     @Published private(set) var sample: (buffer: CMSampleBuffer, connection: AVCaptureConnection)?
     @Published private(set) var performance: String = "--"
     @Published private(set) var levels: [Float] = []
+    var enablesMonitor: Bool = false {
+        didSet {
+            previewOutput = enablesMonitor ? AVCaptureAudioPreviewOutput() : nil
+        }
+    }
 
     init(device: AVCaptureDevice) throws {
         self.device = device
@@ -36,6 +53,9 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
                 self.performance = "\(current.buffer.numSamples) samples (\(duration) secs) in interval of \(interval) secs"
                 self.levels = current.connection.audioChannels.map {$0.averagePowerLevel}
             }.store(in: &cancellables)
+
+        previewVolume.sink {[unowned self] in previewOutput?.volume = $0}
+            .store(in: &cancellables)
     }
 
     func startRunning() {
