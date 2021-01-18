@@ -2,14 +2,30 @@ import Cocoa
 import Ikemen
 import NorthLayout
 
+private func melScale(_ hz: CGFloat) -> CGFloat {
+    CGFloat(1127.010480 * log((hz / 700) + 1))
+}
+
 final class FFTView: NSView {
     var value: (powers: [[Float32]], sampleRate: Float) = ([], 44100) {
         didSet {
             let minHz: Float = 20
+//            let maxHz = min(value.sampleRate / 2, 4200)
             let maxHz = value.sampleRate / 2
             graphView.value = (value.powers, value.sampleRate, minHz, maxHz)
             tickView.value = (minHz, maxHz)
         }
+    }
+
+    var frequencyAxisMode: FrequencyAxisMode = .linear {
+        didSet {
+            graphView.frequencyAxisMode = frequencyAxisMode
+            tickView.frequencyAxisMode = frequencyAxisMode
+        }
+    }
+    enum FrequencyAxisMode {
+        case linear
+        case melScale
     }
 
     private let graphView = FFTGraphView()
@@ -33,6 +49,7 @@ final class FFTView: NSView {
                 setNeedsDisplay(bounds)
             }
         }
+        var frequencyAxisMode: FrequencyAxisMode = .linear
 
         override func draw(_ dirtyRect: NSRect) {
             dirtyRect.fill(using: .clear)
@@ -46,16 +63,30 @@ final class FFTView: NSView {
                 .systemYellow,
             ]
 
+            let minMelScale = melScale(CGFloat(value.minHz))
+            let maxMelScale = melScale(CGFloat(value.maxHz))
+
             value.powers.enumerated().forEach { channelIndex, magnitudes in
                 let validMagnitudes = magnitudes.enumerated().filter {
                     value.minHz...value.maxHz ~= Float($0.offset) / Float(magnitudes.count - 1) * value.sampleRate / 2
                 }.map {$0.element}
-                let barWidth = bounds.width / CGFloat(validMagnitudes.count)
+                let hzWidth = (CGFloat(value.sampleRate) / 2) / CGFloat(magnitudes.count - 1)
                 colors[channelIndex % colors.count].setFill()
                 validMagnitudes.enumerated().forEach { i, v in
-                    CGRect(x: CGFloat(i) * barWidth,
+                    let hz = CGFloat(value.minHz) + (CGFloat(i) / CGFloat(magnitudes.count - 1) * CGFloat(value.sampleRate) / 2)
+                    let x: CGFloat
+                    let w: CGFloat
+                    switch frequencyAxisMode {
+                    case .linear:
+                        x = (hz - CGFloat(value.minHz)) / (CGFloat(value.maxHz) - CGFloat(value.minHz))
+                        w = hzWidth / CGFloat(value.maxHz - value.minHz)
+                    case .melScale:
+                        x = (melScale(hz) - minMelScale) / (maxMelScale - minMelScale)
+                        w = (melScale(hz + hzWidth) - melScale(hz)) / (maxMelScale - minMelScale)
+                    }
+                    CGRect(x: x * bounds.width,
                            y: 0,
-                           width: barWidth,
+                           width: w * bounds.width,
                            height: CGFloat(v) * bounds.height).fill(using: .plusLighter)
                 }
             }
@@ -69,6 +100,7 @@ final class FFTView: NSView {
                 setNeedsDisplay(bounds)
             }
         }
+        var frequencyAxisMode: FrequencyAxisMode = .linear
 
         private let formatter = NumberFormatter() ※ {
             $0.maximumFractionDigits = 1
@@ -90,13 +122,23 @@ final class FFTView: NSView {
                 maxHz,
             ]
 
+            let minMelScale = melScale(minHz)
+            let maxMelScale = melScale(maxHz)
+
             let attrs: [NSAttributedString.Key: Any] = [.foregroundColor: NSColor.labelColor]
             keyLabels.forEach { hz in
-                let x = hz / (maxHz - minHz) * (bounds.width - labelWidth)
+                let x: CGFloat
+                switch frequencyAxisMode {
+                case .linear:
+                    x = hz / (maxHz - minHz)
+                case .melScale:
+                    x = melScale(hz) / (maxMelScale - minMelScale)
+                }
+
                 let hzString = hz >= 1000
                     ? formatter.string(from: (hz / 1000) as NSNumber)! + "k"
                     : formatter.string(from: hz as NSNumber)!
-                (hzString as NSString).draw(at: NSPoint(x: x, y: 0), withAttributes: attrs)
+                (hzString as NSString).draw(at: NSPoint(x: x * (bounds.width - labelWidth), y: 0), withAttributes: attrs)
             }
         }
     }

@@ -51,6 +51,13 @@ class ViewController: NSViewController {
         $0.selectItem(at: 2)
     }
     @Published @objc private var selectedIndexOfFFTBufferLengthPopup: Int = 0
+    private lazy var fftFrequencyAxisModePopup: NSPopUpButton = .init() ※ {
+        $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfFFTFrequencyAxisModePopup), options: nil)
+        $0.removeAllItems()
+        $0.addItems(withTitles: ["Linear", "MelScale"])
+        $0.selectItem(at: 1)
+    }
+    @Published @objc private var selectedIndexOfFFTFrequencyAxisModePopup: Int = 1
 
     private var session: CaptureSession? {
         didSet {
@@ -113,6 +120,7 @@ class ViewController: NSViewController {
             "fft": fftView,
             "fftBufferLengthLabel": fftBufferLengthLabel,
             "fftBufferLengthPopup": fftBufferLengthPopup,
+            "fftFrequencyAxisModePopup": fftFrequencyAxisModePopup,
         ])
         autolayout("H:|-p-[inputs]-p-[phones]-(>=p)-|")
         autolayout("H:|-p-[performance]-p-|")
@@ -120,11 +128,12 @@ class ViewController: NSViewController {
         autolayout("H:|-p-[levels]-p-|")
         autolayout("H:|-p-[fft]-p-|")
         autolayout("H:|-(>=p)-[fftBufferLengthLabel]-[fftBufferLengthPopup]-p-|")
+        autolayout("H:|-(>=p)-[fftFrequencyAxisModePopup]-p-|")
         autolayout("V:|-p-[inputs]-p-[performance]-p-[monitorCheckbox]-p-[levels]")
         autolayout("V:|-p-[phones(inputs)]-p-[performance]-p-[monitorVolume]-p-[levels]")
-        autolayout("V:[levels]-p-[fft(>=64)]-p-|")
+        autolayout("V:[levels]-p-[fft(>=96)]-p-|")
         autolayout("V:[levels]-p-[fftBufferLengthLabel(fftBufferLengthPopup)]-(>=p)-|")
-        autolayout("V:[levels]-p-[fftBufferLengthPopup]-(>=p)-|")
+        autolayout("V:[levels]-p-[fftBufferLengthPopup]-[fftFrequencyAxisModePopup]-(>=p)-|")
         view.addSubview(fftBufferLengthLabel, positioned: .above, relativeTo: fftView)
         view.addSubview(fftBufferLengthPopup, positioned: .above, relativeTo: fftView)
 
@@ -167,6 +176,16 @@ class ViewController: NSViewController {
                 }
             }
             .sink { [unowned self] in session?.enablesMonitor = $0 }
+            .store(in: &cancellables)
+
+        $selectedIndexOfFFTFrequencyAxisModePopup
+            .compactMap {[unowned self] _ -> FFTView.FrequencyAxisMode? in
+                switch fftFrequencyAxisModePopup.titleOfSelectedItem {
+                case "Linear": return .linear
+                case "MelScale": return .melScale
+                default: return nil
+                }
+            }.assign(to: \.frequencyAxisMode, on: fftView)
             .store(in: &cancellables)
     }
 }
