@@ -33,7 +33,7 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
             previewOutput = enablesMonitor ? AVCaptureAudioPreviewOutput() : nil
         }
     }
-    @Published private(set) var fftValues: [[Float32]] = []
+    @Published private(set) var fftValues: (powers: [[Float32]], sampleRate: Float) = ([], 44100)
 
     init(device: AVCaptureDevice) throws {
         self.device = device
@@ -85,101 +85,88 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
         session.stopRunning()
     }
 
+    /// FFT sample length
+    var sampleBufferForFFTLength = 1024
+    /// data buffer for FFT as input
+    private var sampleBufferForFFT: [[Float32]] = []
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         sample = (sampleBuffer, connection)
         guard case .ready = sampleBuffer.dataReadiness else {
-            fftValues.removeAll()
+            fftValues.powers.removeAll()
             return
         }
         do {
             let channelCount = connection.audioChannels.count
+            let sampleBufferForFFTLength = self.sampleBufferForFFTLength
+            let outputBufferForFFTLength = sampleBufferForFFTLength / 2
+            if sampleBufferForFFT.count != channelCount || (sampleBufferForFFT.contains {$0.count != sampleBufferForFFTLength}) {
+                sampleBufferForFFT = [[Float32]](repeating: [Float32](repeating: 0, count: sampleBufferForFFTLength), count: channelCount)
+            }
+
             try sampleBuffer.withAudioBufferList { audioBufferList, blockBuffer in
-                guard let asbd = sampleBuffer.formatDescription?.audioStreamBasicDescription else {
-                    fftValues.removeAll()
-                    return
-                }
-                let bytesPerChannel = asbd.mBitsPerChannel / 8
+                guard let asbd = sampleBuffer.formatDescription?.audioStreamBasicDescription else { return }
 
                 if asbd.mFormatFlags & kAudioFormatFlagIsNonInterleaved > 0 {
                     // audioBufferList has n buffer for n channels, non-interleaved
-                    fftValues = audioBufferList.compactMap {$0.mData}.compactMap { mData in
-                        let realIn: UnsafePointer<Float32>
+                    audioBufferList.enumerated().forEach { channelIndex, buffer in
+                        // shift & append
+                        sampleBufferForFFT[channelIndex].removeFirst(min(Int(sampleBuffer.numSamples), sampleBufferForFFTLength))
+
                         if asbd.mFormatFlags & kAudioFormatFlagIsFloat > 0, asbd.mBitsPerChannel == 32 {
-                            realIn = UnsafePointer(mData.assumingMemoryBound(to: Float32.self))
+                            sampleBufferForFFT[channelIndex].append(contentsOf: UnsafeBufferPointer<Float32>(buffer))
                         } else {
                             // not yet implemented
-                            return nil
+                            return
                         }
-                        let imagIn = [Float32](repeating: 0, count: sampleBuffer.numSamples)
-                        var realOut = [Float32](repeating: 0, count: sampleBuffer.numSamples)
-                        var imagOut = [Float32](repeating: 0, count: sampleBuffer.numSamples)
-                        guard let fftSetup = vDSP_DFT_zop_CreateSetup(nil, vDSP_Length(sampleBuffer.numSamples), .FORWARD) else { return nil }
-                        vDSP_DFT_Execute(fftSetup, realIn, imagIn, &realOut, &imagOut)
-                        vDSP_DFT_DestroySetup(fftSetup)
-
-                        var complex = realOut.withUnsafeMutableBufferPointer { realOut in
-                            imagOut.withUnsafeMutableBufferPointer { imagOut in
-                                DSPSplitComplex(realp: realOut.baseAddress!, imagp: imagOut.baseAddress!)
-                            }
-                        }
-                        var magnitudes = [Float32](repeating: 0, count: sampleBuffer.numSamples / 2)
-                        vDSP_zvabs(&complex, 1, &magnitudes, 1, vDSP_Length(sampleBuffer.numSamples / 2))
-                        var normalizedMagnitudes = [Float32](repeating: 0.0, count: sampleBuffer.numSamples / 2)
-                        var scalingFactor = Float(25.0 / (Float(sampleBuffer.numSamples) / 2.0))
-                        vDSP_vsmul(&magnitudes, 1, &scalingFactor, &normalizedMagnitudes, 1, vDSP_Length(sampleBuffer.numSamples / 2))
-
-                        return normalizedMagnitudes
                     }
                 } else {
                     // audioBufferList has 1 buffer for n channels, interleaved
-                    guard let mData = audioBufferList.first?.mData else {
-                        fftValues.removeAll()
-                        return
-                    }
-
+                    guard let buffer = audioBufferList.first else { return }
                     if asbd.mFormatFlags & kAudioFormatFlagIsSignedInteger > 0, asbd.mBitsPerChannel == 16 {
-                        let source = UnsafeBufferPointer(start: mData.assumingMemoryBound(to: Int16.self), count: sampleBuffer.numSamples * channelCount * Int(bytesPerChannel) / MemoryLayout<Int16>.size)
-                            .map {Float32($0) / Float(Int16.max)}
-                        fftValues = (0..<channelCount).compactMap { channelIndex in
-                            source.withUnsafeBufferPointer { source in
-                                let channelSamples = sampleBuffer.numSamples
-                                var realIn = [Float32](repeating: 0, count: channelSamples)
-                                let imagIn = [Float32](repeating: 0, count: channelSamples)
-                                var realOut = [Float32](repeating: 0, count: channelSamples)
-                                var imagOut = [Float32](repeating: 0, count: channelSamples)
-                                vDSP_vadd(source.baseAddress! + channelIndex, vDSP_Stride(channelCount), realIn, 1, &realIn, 1, vDSP_Length(channelSamples))
+                        UnsafeBufferPointer<Int16>(buffer).map {Float32($0) / Float(Int16.max)}.withUnsafeBufferPointer { source in
+                            // shift & append
+                            (0..<channelCount).forEach { channelIndex in
+                                sampleBufferForFFT[channelIndex].removeFirst(min(Int(sampleBuffer.numSamples), sampleBufferForFFTLength))
 
-                                // copy-and-paste from non-interleaved float32
-
-                                guard let fftSetup = vDSP_DFT_zop_CreateSetup(nil, vDSP_Length(channelSamples), .FORWARD) else { return nil }
-                                vDSP_DFT_Execute(fftSetup, realIn, imagIn, &realOut, &imagOut)
-                                vDSP_DFT_DestroySetup(fftSetup)
-
-                                var complex = realOut.withUnsafeMutableBufferPointer { realOut in
-                                    imagOut.withUnsafeMutableBufferPointer { imagOut in
-                                        DSPSplitComplex(realp: realOut.baseAddress!, imagp: imagOut.baseAddress!)
-                                    }
-                                }
-                                var magnitudes = [Float32](repeating: 0, count: channelSamples / 2)
-                                vDSP_zvabs(&complex, 1, &magnitudes, 1, vDSP_Length(channelSamples / 2))
-                                var normalizedMagnitudes = [Float32](repeating: 0.0, count: channelSamples / 2)
-                                var scalingFactor = Float(25.0 / (Float(channelSamples) / 2.0))
-                                vDSP_vsmul(&magnitudes, 1, &scalingFactor, &normalizedMagnitudes, 1, vDSP_Length(channelSamples / 2))
-
-                                return normalizedMagnitudes
+                                var channelSamples = [Float32](repeating: 0, count: sampleBuffer.numSamples)
+                                vDSP_vadd(source.baseAddress! + channelIndex, vDSP_Stride(channelCount), channelSamples, 1, &channelSamples, 1, vDSP_Length(sampleBuffer.numSamples))
+                                sampleBufferForFFT[channelIndex].append(contentsOf: channelSamples)
                             }
                         }
                     } else {
                         // not yet implemented
-                        fftValues.removeAll()
                         return
                     }
                 }
+
+                // FFT
+                fftValues = ((0..<channelCount).map { channelIndex in
+                    let realIn = sampleBufferForFFT[channelIndex]
+                    let imagIn = [Float32](repeating: 0, count: sampleBufferForFFTLength)
+                    var realOut = [Float32](repeating: 0, count: sampleBufferForFFTLength)
+                    var imagOut = [Float32](repeating: 0, count: sampleBufferForFFTLength)
+                    guard let fftSetup = vDSP_DFT_zop_CreateSetup(nil, vDSP_Length(sampleBufferForFFTLength), .FORWARD) else { return [] }
+                    vDSP_DFT_Execute(fftSetup, realIn, imagIn, &realOut, &imagOut)
+                    vDSP_DFT_DestroySetup(fftSetup)
+
+                    var complex = realOut.withUnsafeMutableBufferPointer { realOut in
+                        imagOut.withUnsafeMutableBufferPointer { imagOut in
+                            DSPSplitComplex(realp: realOut.baseAddress!, imagp: imagOut.baseAddress!)
+                        }
+                    }
+                    var magnitudes = [Float32](repeating: 0, count: outputBufferForFFTLength)
+                    vDSP_zvabs(&complex, 1, &magnitudes, 1, vDSP_Length(outputBufferForFFTLength))
+                    var normalizedMagnitudes = [Float32](repeating: 0.0, count: outputBufferForFFTLength)
+                    var scalingFactor = 25.0 / Float(outputBufferForFFTLength)
+                    vDSP_vsmul(&magnitudes, 1, &scalingFactor, &normalizedMagnitudes, 1, vDSP_Length(outputBufferForFFTLength))
+
+                    return normalizedMagnitudes
+                }, Float(asbd.mSampleRate))
             }
         } catch {
             // NSLog("%@", "withAudioBufferList error = \(error)")
-            fftValues.removeAll()
+            fftValues.powers.removeAll()
         }
     }
 }

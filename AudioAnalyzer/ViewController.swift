@@ -41,6 +41,16 @@ class ViewController: NSViewController {
 
     private let levelsStackView = ChannelLevelStackView()
     private let fftView = FFTView()
+    private let fftBufferLengthLabel = NSTextField(labelWithString: "FFT Buffer") ※ {
+        $0.textColor = .tertiaryLabelColor
+    }
+    private lazy var fftBufferLengthPopup: NSPopUpButton = .init() ※ {
+        $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfFFTBufferLengthPopup), options: nil)
+        $0.removeAllItems()
+        $0.addItems(withTitles: [256, 512, 1024, 2048, 4096].map {String($0)})
+        $0.selectItem(at: 2)
+    }
+    @Published @objc private var selectedIndexOfFFTBufferLengthPopup: Int = 0
 
     private var session: CaptureSession? {
         didSet {
@@ -63,6 +73,12 @@ class ViewController: NSViewController {
                 session.$fftValues.receive(on: DispatchQueue.main)
                     .assign(to: \.value, on: fftView)
                     .store(in: &cancellables)
+
+                $selectedIndexOfFFTBufferLengthPopup
+                    .map {[unowned self] _ in fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024}
+                    .assign(to: \.sampleBufferForFFTLength, on: session)
+                    .store(in: &cancellables)
+                session.sampleBufferForFFTLength = fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024
 
                 session.previewVolume.value = monitorVolumeSliderValue
                 $monitorVolumeSliderValue.removeDuplicates()
@@ -95,15 +111,22 @@ class ViewController: NSViewController {
             "monitorVolume": monitorVolumeSlider,
             "levels": levelsStackView,
             "fft": fftView,
+            "fftBufferLengthLabel": fftBufferLengthLabel,
+            "fftBufferLengthPopup": fftBufferLengthPopup,
         ])
         autolayout("H:|-p-[inputs]-p-[phones]-(>=p)-|")
         autolayout("H:|-p-[performance]-p-|")
         autolayout("H:|-p-[monitorCheckbox]-p-[monitorVolume]-p-|")
         autolayout("H:|-p-[levels]-p-|")
         autolayout("H:|-p-[fft]-p-|")
+        autolayout("H:|-(>=p)-[fftBufferLengthLabel]-[fftBufferLengthPopup]-p-|")
         autolayout("V:|-p-[inputs]-p-[performance]-p-[monitorCheckbox]-p-[levels]")
         autolayout("V:|-p-[phones(inputs)]-p-[performance]-p-[monitorVolume]-p-[levels]")
         autolayout("V:[levels]-p-[fft(>=64)]-p-|")
+        autolayout("V:[levels]-p-[fftBufferLengthLabel(fftBufferLengthPopup)]-(>=p)-|")
+        autolayout("V:[levels]-p-[fftBufferLengthPopup]-(>=p)-|")
+        view.addSubview(fftBufferLengthLabel, positioned: .above, relativeTo: fftView)
+        view.addSubview(fftBufferLengthPopup, positioned: .above, relativeTo: fftView)
 
         AudioDevice.shared.$inputDevices
             .prepend(AudioDevice.shared.inputDevices)
