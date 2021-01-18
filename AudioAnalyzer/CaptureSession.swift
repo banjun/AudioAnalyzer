@@ -3,7 +3,10 @@ import Combine
 import Accelerate
 
 final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
-    deinit {NSLog("%@", "deinit \(self.debugDescription)")}
+    deinit {
+        fftSetup = nil
+        NSLog("%@", "deinit \(self.debugDescription)")
+    }
 
     private let device: AVCaptureDevice
     private let session: AVCaptureSession
@@ -89,6 +92,12 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
     var sampleBufferForFFTLength = 1024
     /// data buffer for FFT as input
     private var sampleBufferForFFT: [[Float32]] = []
+    private var fftSetup: vDSP_DFT_Setup? {
+        didSet {
+            guard fftSetup != oldValue else { return }
+            vDSP_DFT_DestroySetup(oldValue)
+        }
+    }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         sample = (sampleBuffer, connection)
@@ -102,19 +111,23 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
             let outputBufferForFFTLength = sampleBufferForFFTLength / 2
             if sampleBufferForFFT.count != channelCount || (sampleBufferForFFT.contains {$0.count != sampleBufferForFFTLength}) {
                 sampleBufferForFFT = [[Float32]](repeating: [Float32](repeating: 0, count: sampleBufferForFFTLength), count: channelCount)
+                self.fftSetup = nil
             }
+            guard let fftSetup = self.fftSetup ?? vDSP_DFT_zop_CreateSetup(nil, vDSP_Length(sampleBufferForFFTLength), .FORWARD) else { return }
+            self.fftSetup = fftSetup
 
             try sampleBuffer.withAudioBufferList { audioBufferList, blockBuffer in
                 guard let asbd = sampleBuffer.formatDescription?.audioStreamBasicDescription else { return }
+                let samplesCount = min(Int(sampleBuffer.numSamples), sampleBufferForFFTLength)
+                // remove old bufferred samples
+                (0..<channelCount).forEach {sampleBufferForFFT[$0].removeFirst(samplesCount)}
 
+                // append re-organizing by channels
                 if asbd.mFormatFlags & kAudioFormatFlagIsNonInterleaved > 0 {
                     // audioBufferList has n buffer for n channels, non-interleaved
                     audioBufferList.enumerated().forEach { channelIndex, buffer in
-                        // shift & append
-                        sampleBufferForFFT[channelIndex].removeFirst(min(Int(sampleBuffer.numSamples), sampleBufferForFFTLength))
-
                         if asbd.mFormatFlags & kAudioFormatFlagIsFloat > 0, asbd.mBitsPerChannel == 32 {
-                            sampleBufferForFFT[channelIndex].append(contentsOf: UnsafeBufferPointer<Float32>(buffer))
+                            sampleBufferForFFT[channelIndex].append(contentsOf: UnsafeBufferPointer<Float32>(buffer).prefix(samplesCount))
                         } else {
                             // not yet implemented
                             return
@@ -125,12 +138,9 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
                     guard let buffer = audioBufferList.first else { return }
                     if asbd.mFormatFlags & kAudioFormatFlagIsSignedInteger > 0, asbd.mBitsPerChannel == 16 {
                         UnsafeBufferPointer<Int16>(buffer).map {Float32($0) / Float(Int16.max)}.withUnsafeBufferPointer { source in
-                            // shift & append
                             (0..<channelCount).forEach { channelIndex in
-                                sampleBufferForFFT[channelIndex].removeFirst(min(Int(sampleBuffer.numSamples), sampleBufferForFFTLength))
-
-                                var channelSamples = [Float32](repeating: 0, count: sampleBuffer.numSamples)
-                                vDSP_vadd(source.baseAddress! + channelIndex, vDSP_Stride(channelCount), channelSamples, 1, &channelSamples, 1, vDSP_Length(sampleBuffer.numSamples))
+                                var channelSamples = [Float32](repeating: 0, count: samplesCount)
+                                vDSP_vadd(source.baseAddress! + channelIndex, vDSP_Stride(channelCount), channelSamples, 1, &channelSamples, 1, vDSP_Length(samplesCount))
                                 sampleBufferForFFT[channelIndex].append(contentsOf: channelSamples)
                             }
                         }
@@ -141,26 +151,23 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
                 }
 
                 // FFT
-                fftValues = ((0..<channelCount).map { channelIndex in
-                    let realIn = sampleBufferForFFT[channelIndex]
-                    let imagIn = [Float32](repeating: 0, count: sampleBufferForFFTLength)
-                    var realOut = [Float32](repeating: 0, count: sampleBufferForFFTLength)
-                    var imagOut = [Float32](repeating: 0, count: sampleBufferForFFTLength)
-                    guard let fftSetup = vDSP_DFT_zop_CreateSetup(nil, vDSP_Length(sampleBufferForFFTLength), .FORWARD) else { return [] }
-                    vDSP_DFT_Execute(fftSetup, realIn, imagIn, &realOut, &imagOut)
-                    vDSP_DFT_DestroySetup(fftSetup)
-
-                    var complex = realOut.withUnsafeMutableBufferPointer { realOut in
+                let imagIn = [Float32](repeating: 0, count: sampleBufferForFFTLength)
+                var realOut = [Float32](repeating: 0, count: sampleBufferForFFTLength)
+                var imagOut = [Float32](repeating: 0, count: sampleBufferForFFTLength)
+                var magnitudes = [Float32](repeating: 0, count: outputBufferForFFTLength)
+                var normalizedMagnitudes = [Float32](repeating: 0, count: outputBufferForFFTLength)
+                var scalingFactor = 25.0 / Float(outputBufferForFFTLength)
+                fftValues = (sampleBufferForFFT.map { realIn in
+                    var complex: DSPSplitComplex = realOut.withUnsafeMutableBufferPointer { realOut in
                         imagOut.withUnsafeMutableBufferPointer { imagOut in
-                            DSPSplitComplex(realp: realOut.baseAddress!, imagp: imagOut.baseAddress!)
+                            let realOutP = realOut.baseAddress!
+                            let imagOutP = imagOut.baseAddress!
+                            vDSP_DFT_Execute(fftSetup, realIn, imagIn, realOutP, imagOutP)
+                            return DSPSplitComplex(realp: realOutP, imagp: imagOutP)
                         }
                     }
-                    var magnitudes = [Float32](repeating: 0, count: outputBufferForFFTLength)
                     vDSP_zvabs(&complex, 1, &magnitudes, 1, vDSP_Length(outputBufferForFFTLength))
-                    var normalizedMagnitudes = [Float32](repeating: 0.0, count: outputBufferForFFTLength)
-                    var scalingFactor = 25.0 / Float(outputBufferForFFTLength)
                     vDSP_vsmul(&magnitudes, 1, &scalingFactor, &normalizedMagnitudes, 1, vDSP_Length(outputBufferForFFTLength))
-
                     return normalizedMagnitudes
                 }, Float(asbd.mSampleRate))
             }
