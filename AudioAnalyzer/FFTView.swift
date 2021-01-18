@@ -39,7 +39,7 @@ final class FFTView: NSView {
         ])
         autolayout("H:|[graph]|")
         autolayout("H:|[tick]|")
-        autolayout("V:|[graph]-4-[tick(16)]|")
+        autolayout("V:|[graph]-2-[tick(16)]|")
     }
     required init?(coder: NSCoder) {fatalError()}
 
@@ -49,7 +49,11 @@ final class FFTView: NSView {
                 setNeedsDisplay(bounds)
             }
         }
-        var frequencyAxisMode: FrequencyAxisMode = .linear
+        var frequencyAxisMode: FrequencyAxisMode = .linear {
+            didSet {
+                setNeedsDisplay(bounds)
+            }
+        }
 
         override func draw(_ dirtyRect: NSRect) {
             dirtyRect.fill(using: .clear)
@@ -84,9 +88,9 @@ final class FFTView: NSView {
                         x = (melScale(hz) - minMelScale) / (maxMelScale - minMelScale)
                         w = (melScale(hz + hzWidth) - melScale(hz)) / (maxMelScale - minMelScale)
                     }
-                    CGRect(x: x * bounds.width,
+                    CGRect(x: x * (bounds.width - 1),
                            y: 0,
-                           width: w * bounds.width,
+                           width: w * (bounds.width - 1),
                            height: CGFloat(v) * bounds.height).fill(using: .plusLighter)
                 }
             }
@@ -100,7 +104,11 @@ final class FFTView: NSView {
                 setNeedsDisplay(bounds)
             }
         }
-        var frequencyAxisMode: FrequencyAxisMode = .linear
+        var frequencyAxisMode: FrequencyAxisMode = .linear {
+            didSet {
+                setNeedsDisplay(bounds)
+            }
+        }
 
         private let formatter = NumberFormatter() ※ {
             $0.maximumFractionDigits = 1
@@ -113,32 +121,53 @@ final class FFTView: NSView {
 
             let minHz = CGFloat(value.minHz)
             let maxHz = CGFloat(value.maxHz)
-            let keyLabels = [
-                minHz,
-                //440,
-                //880,
-                //1760,
-                //3520,
-                maxHz,
-            ]
+            let keyLabels: [CGFloat]
+            switch frequencyAxisMode {
+            case .melScale: fallthrough
+            case .linear where bounds.width > 1024:
+                keyLabels = [
+                    minHz,
+                    440,
+                    880,
+                    1760,
+                    3520,
+                    maxHz,
+                ]
+            case .linear where bounds.width > 540:
+                keyLabels = [
+                    minHz,
+                    880,
+                    1760,
+                    3520,
+                    maxHz,
+                ]
+            case .linear:
+                keyLabels = [
+                    minHz,
+                    3520,
+                    maxHz,
+                ]
+            }
 
             let minMelScale = melScale(minHz)
             let maxMelScale = melScale(maxHz)
 
-            let attrs: [NSAttributedString.Key: Any] = [.foregroundColor: NSColor.labelColor]
+            let attrs: [NSAttributedString.Key: Any] = [.foregroundColor: NSColor.secondaryLabelColor]
             keyLabels.forEach { hz in
                 let x: CGFloat
                 switch frequencyAxisMode {
                 case .linear:
-                    x = hz / (maxHz - minHz)
+                    x = (hz - minHz) / (maxHz - minHz)
                 case .melScale:
-                    x = melScale(hz) / (maxMelScale - minMelScale)
+                    x = (melScale(hz) - minMelScale) / (maxMelScale - minMelScale)
                 }
 
+                NSColor.labelColor.setFill()
+                CGRect(x: x * (bounds.width - 1), y: bounds.height - 2, width: 1, height: 2).fill()
                 let hzString = hz >= 1000
                     ? formatter.string(from: (hz / 1000) as NSNumber)! + "k"
                     : formatter.string(from: hz as NSNumber)!
-                (hzString as NSString).draw(at: NSPoint(x: x * (bounds.width - labelWidth), y: 0), withAttributes: attrs)
+                (hzString as NSString).draw(at: CGPoint(x: x * (bounds.width - labelWidth), y: 0), withAttributes: attrs)
             }
         }
     }
