@@ -47,7 +47,7 @@ class ViewController: NSViewController {
     private lazy var fftBufferLengthPopup: NSPopUpButton = .init() ※ {
         $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfFFTBufferLengthPopup), options: nil)
         $0.removeAllItems()
-        $0.addItems(withTitles: [256, 512, 1024, 2048, 4096].map {String($0)})
+        $0.addItems(withTitles: [256, 512, 1024, 2048, 4096, 8192, 16384].map {String($0)})
         $0.selectItem(at: 2)
     }
     @Published @objc private var selectedIndexOfFFTBufferLengthPopup: Int = 0
