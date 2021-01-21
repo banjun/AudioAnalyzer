@@ -41,9 +41,6 @@ class ViewController: NSViewController {
 
     private let levelsStackView = ChannelLevelStackView()
     private let fftView = FFTView()
-    private let fftBufferLengthLabel = NSTextField(labelWithString: "FFT Buffer") ※ {
-        $0.textColor = .tertiaryLabelColor
-    }
     private lazy var fftBufferLengthPopup: NSPopUpButton = .init() ※ {
         $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfFFTBufferLengthPopup), options: nil)
         $0.removeAllItems()
@@ -58,6 +55,16 @@ class ViewController: NSViewController {
         $0.selectItem(at: 1)
     }
     @Published @objc private var selectedIndexOfFFTFrequencyAxisModePopup: Int = 1
+
+    private lazy var upperFrequencyPopup: NSPopUpButton = .init() ※ {
+        $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfUpperFrequencyPopup), options: nil)
+        $0.removeAllItems()
+        $0.addItems(withTitles: [4410, 8820, 22050, 24000].map {String($0)})
+        $0.selectItem(at: 0)
+    }
+    @Published @objc private var selectedIndexOfUpperFrequencyPopup: Int = 0
+
+    private let estimateMusicalKeysCheckbox = NSButton(checkboxWithTitle: "Keys", target: nil, action: nil)
 
     private var session: CaptureSession? {
         didSet {
@@ -107,6 +114,13 @@ class ViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let fftBufferLengthLabel = NSTextField(labelWithString: "FFT Buffer") ※ {
+            $0.textColor = .tertiaryLabelColor
+        }
+        let upperLabel = NSTextField(labelWithString: "Upper") ※ {
+            $0.textColor = .tertiaryLabelColor
+        }
+
         let autolayout = view.northLayoutFormat(["p": 20], [
             "inputs": audioInputPopup,
             "phones": discoversPhonesCheckbox,
@@ -121,6 +135,9 @@ class ViewController: NSViewController {
             "fftBufferLengthLabel": fftBufferLengthLabel,
             "fftBufferLengthPopup": fftBufferLengthPopup,
             "fftFrequencyAxisModePopup": fftFrequencyAxisModePopup,
+            "upperLabel": upperLabel,
+            "upperPopup": upperFrequencyPopup,
+            "keys": estimateMusicalKeysCheckbox,
         ])
         autolayout("H:|-p-[inputs]-p-[phones]-(>=p)-|")
         autolayout("H:|-p-[performance]-p-|")
@@ -129,13 +146,18 @@ class ViewController: NSViewController {
         autolayout("H:|-p-[fft]-p-|")
         autolayout("H:|-(>=p)-[fftBufferLengthLabel]-[fftBufferLengthPopup]-p-|")
         autolayout("H:|-(>=p)-[fftFrequencyAxisModePopup]-p-|")
+        autolayout("H:|-(>=p)-[upperLabel]-[upperPopup]-p-|")
+        autolayout("H:|-(>=p)-[keys]-p-|")
+        autolayout("H:|-(>=p)-[fftFrequencyAxisModePopup]-p-|")
         autolayout("V:|-p-[inputs]-p-[performance]-p-[monitorCheckbox]-p-[levels]")
         autolayout("V:|-p-[phones(inputs)]-p-[performance]-p-[monitorVolume]-p-[levels]")
-        autolayout("V:[levels]-p-[fft(>=96)]-p-|")
-        autolayout("V:[levels]-p-[fftBufferLengthLabel(fftBufferLengthPopup)]-(>=p)-|")
-        autolayout("V:[levels]-p-[fftBufferLengthPopup]-[fftFrequencyAxisModePopup]-(>=p)-|")
-        view.addSubview(fftBufferLengthLabel, positioned: .above, relativeTo: fftView)
-        view.addSubview(fftBufferLengthPopup, positioned: .above, relativeTo: fftView)
+        autolayout("V:[levels]-p-[fft(>=128)]-p-|")
+        autolayout("V:[levels]-p-[fftBufferLengthPopup]-[fftFrequencyAxisModePopup]-[upperPopup]-[keys]-(>=96)-|")
+        fftBufferLengthLabel.centerYAnchor.constraint(equalTo: fftBufferLengthPopup.centerYAnchor).isActive = true
+        upperLabel.centerYAnchor.constraint(equalTo: upperFrequencyPopup.centerYAnchor).isActive = true
+        [fftBufferLengthLabel, fftBufferLengthPopup, upperLabel, upperFrequencyPopup, estimateMusicalKeysCheckbox].forEach {
+            view.addSubview($0, positioned: .above, relativeTo: fftView)
+        }
 
         AudioDevice.shared.$inputDevices
             .prepend(AudioDevice.shared.inputDevices)
@@ -158,23 +180,11 @@ class ViewController: NSViewController {
             .assign(to: \.state, on: discoversPhonesCheckbox)
             .store(in: &cancellables)
 
-        discoversPhonesCheckbox.cell!.publisher(for: \.state, options: [.new])
-            .map {
-                switch $0 {
-                case .on: return true
-                default: return false
-                }
-            }
+        discoversPhonesCheckbox.publisherForStateOnOff()
             .subscribe(AudioDevice.shared.discoversPhones)
             .store(in: &cancellables)
 
-        monitorCheckbox.cell!.publisher(for: \.state, options: [.new])
-            .map {
-                switch $0 {
-                case .on: return true
-                default: return false
-                }
-            }
+        monitorCheckbox.publisherForStateOnOff()
             .sink { [unowned self] in session?.enablesMonitor = $0 }
             .store(in: &cancellables)
 
@@ -186,6 +196,16 @@ class ViewController: NSViewController {
                 default: return nil
                 }
             }.assign(to: \.frequencyAxisMode, on: fftView)
+            .store(in: &cancellables)
+
+        $selectedIndexOfUpperFrequencyPopup
+            .compactMap {[unowned self] _ in Float(upperFrequencyPopup.titleOfSelectedItem ?? "")}
+            .filter {$0 > 20}
+            .assign(to: \.upperFrequency, on: fftView)
+            .store(in: &cancellables)
+
+        estimateMusicalKeysCheckbox.publisherForStateOnOff()
+            .assign(to: \.estimateMusicalKeys, on: fftView)
             .store(in: &cancellables)
     }
 }

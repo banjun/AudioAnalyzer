@@ -10,11 +10,18 @@ final class FFTView: NSView {
     var value: (powers: [[Float32]], sampleRate: Float) = ([], 44100) {
         didSet {
             let minHz: Float = 20
-            let maxHz = min(value.sampleRate / 2, 8800)
-//            let maxHz = value.sampleRate / 2
+            let maxHz = min(value.sampleRate / 2, upperFrequency)
             graphView.value = (value.powers, value.sampleRate, minHz, maxHz)
             tickView.value = (minHz, maxHz)
             keysView.value = graphView.value
+        }
+    }
+
+    var upperFrequency: Float = 44100 / 2
+
+    var estimateMusicalKeys: Bool = false {
+        didSet {
+            keysView.isEnabled = estimateMusicalKeys
         }
     }
 
@@ -190,6 +197,7 @@ final class FFTView: NSView {
                 setNeedsDisplay(bounds)
             }
         }
+        var isEnabled: Bool = false
 
         static let labelsWithSharps = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
         static let labelsWithFlats = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
@@ -205,6 +213,7 @@ final class FFTView: NSView {
         static let channelAttrs: [[NSAttributedString.Key: Any]] = FFTView.channelColors.map {[.foregroundColor: $0]}
 
         override func draw(_ dirtyRect: NSRect) {
+            guard isEnabled else { return }
             dirtyRect.fill(using: .clear)
 
             let minHz = CGFloat(value.minHz)
@@ -246,13 +255,6 @@ final class FFTView: NSView {
                 CGRect(x: left.x, y: 0, width: right.x + right.w, height: bounds.height).fill(using: .copy)
             }
 
-//            NSColor.separatorColor.setFill()
-//            xws.forEach {
-//                CGRect(x: $0.x,
-//                       y: -1,
-//                       width: $0.w,
-//                       height: bounds.height + 2).frame(withWidth: 0.5, using: .copy)
-//            }
             xws.forEach { x, w, label, magnitudeForChannels in
                 (magnitudeForChannels ?? []).enumerated().forEach { i, magnitude in
                     guard let magnitude = magnitude else { return }

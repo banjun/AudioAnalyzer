@@ -26,3 +26,17 @@ extension Publisher {
         prefix(1).flatMap {self.combinePrevious($0)}
     }
 }
+
+import AppKit
+
+extension NSButton {
+    func publisherForStateOnOff(options: NSKeyValueObservingOptions = [.new]) -> AnyPublisher<Bool, Never> {
+        cell!.publisher(for: \.state, options: options)
+            .map {
+                switch $0 {
+                case .on: return true
+                default: return false
+                }
+            }.eraseToAnyPublisher()
+    }
+}
