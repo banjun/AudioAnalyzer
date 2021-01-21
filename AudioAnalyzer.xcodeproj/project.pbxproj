@@ -3,10 +3,11 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A35676745367E5B669E8871 /* Pods_AudioAnalyzer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 76AC5FB73CA84F401E431939 /* Pods_AudioAnalyzer.framework */; };
 		EA134F2025B455AE0081F834 /* Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA134F1F25B455AE0081F834 /* Combine.swift */; };
 		EA134F2325B45F0D0081F834 /* CannelLevelIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA134F2225B45F0D0081F834 /* CannelLevelIndicator.swift */; };
 		EA371BFB25B08EFA001476F9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371BFA25B08EFA001476F9 /* AppDelegate.swift */; };
@@ -14,13 +15,14 @@
 		EA371BFF25B08EFC001476F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EA371BFE25B08EFC001476F9 /* Assets.xcassets */; };
 		EA371C0225B08EFC001476F9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EA371C0025B08EFC001476F9 /* Main.storyboard */; };
 		EA371C0C25B08F45001476F9 /* AudioDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371C0B25B08F45001476F9 /* AudioDevice.swift */; };
-		EA371C1025B0933F001476F9 /* Ikemen in Frameworks */ = {isa = PBXBuildFile; productRef = EA371C0F25B0933F001476F9 /* Ikemen */; };
-		EA371C1425B0949C001476F9 /* NorthLayout in Frameworks */ = {isa = PBXBuildFile; productRef = EA371C1325B0949C001476F9 /* NorthLayout */; };
 		EA371C1925B097C7001476F9 /* CaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371C1825B097C7001476F9 /* CaptureSession.swift */; };
 		EA3ED0E525B4BB3900092398 /* FFTView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA3ED0E425B4BB3900092398 /* FFTView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		70A75EF1F9F7C06A4AB8C0A8 /* Pods-AudioAnalyzer.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AudioAnalyzer.release.xcconfig"; path = "Target Support Files/Pods-AudioAnalyzer/Pods-AudioAnalyzer.release.xcconfig"; sourceTree = "<group>"; };
+		76AC5FB73CA84F401E431939 /* Pods_AudioAnalyzer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AudioAnalyzer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		9429B06AB406F358FD82DBF4 /* Pods-AudioAnalyzer.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AudioAnalyzer.debug.xcconfig"; path = "Target Support Files/Pods-AudioAnalyzer/Pods-AudioAnalyzer.debug.xcconfig"; sourceTree = "<group>"; };
 		EA134F1F25B455AE0081F834 /* Combine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Combine.swift; sourceTree = "<group>"; };
 		EA134F2225B45F0D0081F834 /* CannelLevelIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CannelLevelIndicator.swift; sourceTree = "<group>"; };
 		EA371BF725B08EFA001476F9 /* AudioAnalyzer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AudioAnalyzer.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -40,19 +42,37 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EA371C1425B0949C001476F9 /* NorthLayout in Frameworks */,
-				EA371C1025B0933F001476F9 /* Ikemen in Frameworks */,
+				0A35676745367E5B669E8871 /* Pods_AudioAnalyzer.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4ADBADEB6194B140972AB37F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				76AC5FB73CA84F401E431939 /* Pods_AudioAnalyzer.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		CD065099F466FF94BEBC735B /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				9429B06AB406F358FD82DBF4 /* Pods-AudioAnalyzer.debug.xcconfig */,
+				70A75EF1F9F7C06A4AB8C0A8 /* Pods-AudioAnalyzer.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		EA371BEE25B08EFA001476F9 = {
 			isa = PBXGroup;
 			children = (
 				EA371BF925B08EFA001476F9 /* AudioAnalyzer */,
 				EA371BF825B08EFA001476F9 /* Products */,
+				CD065099F466FF94BEBC735B /* Pods */,
+				4ADBADEB6194B140972AB37F /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -89,6 +109,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = EA371C0725B08EFC001476F9 /* Build configuration list for PBXNativeTarget "AudioAnalyzer" */;
 			buildPhases = (
+				467D02DF8957C1749F1F05B4 /* [CP] Check Pods Manifest.lock */,
 				EA371BF325B08EFA001476F9 /* Sources */,
 				EA371BF425B08EFA001476F9 /* Frameworks */,
 				EA371BF525B08EFA001476F9 /* Resources */,
@@ -99,8 +120,6 @@
 			);
 			name = AudioAnalyzer;
 			packageProductDependencies = (
-				EA371C0F25B0933F001476F9 /* Ikemen */,
-				EA371C1325B0949C001476F9 /* NorthLayout */,
 			);
 			productName = AudioAnalyzer;
 			productReference = EA371BF725B08EFA001476F9 /* AudioAnalyzer.app */;
@@ -130,8 +149,6 @@
 			);
 			mainGroup = EA371BEE25B08EFA001476F9;
 			packageReferences = (
-				EA371C0E25B0933F001476F9 /* XCRemoteSwiftPackageReference "ikemen" */,
-				EA371C1225B0949C001476F9 /* XCRemoteSwiftPackageReference "NorthLayout" */,
 			);
 			productRefGroup = EA371BF825B08EFA001476F9 /* Products */;
 			projectDirPath = "";
@@ -153,6 +170,31 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		467D02DF8957C1749F1F05B4 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-AudioAnalyzer-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		EA371BF325B08EFA001476F9 /* Sources */ = {
@@ -300,6 +342,7 @@
 		};
 		EA371C0825B08EFC001476F9 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9429B06AB406F358FD82DBF4 /* Pods-AudioAnalyzer.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -320,6 +363,7 @@
 		};
 		EA371C0925B08EFC001476F9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 70A75EF1F9F7C06A4AB8C0A8 /* Pods-AudioAnalyzer.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -360,38 +404,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		EA371C0E25B0933F001476F9 /* XCRemoteSwiftPackageReference "ikemen" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/banjun/ikemen.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.7.0;
-			};
-		};
-		EA371C1225B0949C001476F9 /* XCRemoteSwiftPackageReference "NorthLayout" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/banjun/NorthLayout.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.3.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		EA371C0F25B0933F001476F9 /* Ikemen */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EA371C0E25B0933F001476F9 /* XCRemoteSwiftPackageReference "ikemen" */;
-			productName = Ikemen;
-		};
-		EA371C1325B0949C001476F9 /* NorthLayout */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EA371C1225B0949C001476F9 /* XCRemoteSwiftPackageReference "NorthLayout" */;
-			productName = NorthLayout;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = EA371BEF25B08EFA001476F9 /* Project object */;
 }

@@ -1,0 +1,6 @@
+framework module Pods_AudioAnalyzer {
+  umbrella header "Pods-AudioAnalyzer-umbrella.h"
+
+  export *
+  module * { export * }
+}
