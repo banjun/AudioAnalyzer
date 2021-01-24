@@ -189,15 +189,22 @@ final class FFTView: NSView {
     private class FFTKeysView: NSView {
         fileprivate var value: (powers: [[Float32]], sampleRate: Float, minHz: Float, maxHz: Float) = ([], 44100, 20, 44100 / 2) {
             didSet {
-                setNeedsDisplay(bounds)
+                updateLayers()
             }
         }
         var frequencyAxisMode: FrequencyAxisMode = .linear {
             didSet {
-                setNeedsDisplay(bounds)
+                updateLayers()
             }
         }
-        var isEnabled: Bool = false
+        var isEnabled: Bool = false {
+            didSet {
+                keyBackgroundLayer.isHidden = !isEnabled
+                if !isEnabled {
+                    keyLabelLayers = []
+                }
+            }
+        }
 
         static let labelsWithSharps = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
         static let labelsWithFlats = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
@@ -211,10 +218,51 @@ final class FFTView: NSView {
             ($0.element, labelsWithFlats[($0.offset + 9) % labelsWithFlats.count])
         }
         static let channelAttrs: [[NSAttributedString.Key: Any]] = FFTView.channelColors.map {[.foregroundColor: $0]}
-
-        override func draw(_ dirtyRect: NSRect) {
+        
+        let keyBackgroundLayer = CALayer() ※ {
+            $0.backgroundColor = .white
+        }
+        
+        var keyLabelLayers: [[CATextLayer]] = [] {
+            didSet {
+                oldValue.forEach {$0.forEach {$0.removeFromSuperlayer()}}
+                keyLabelLayers.forEach {$0.forEach {layer!.addSublayer($0)}}
+            }
+        }
+        
+        init() {
+            super.init(frame: .zero)
+            wantsLayer = true
+            layer!.addSublayer(keyBackgroundLayer)
+        }
+        required init?(coder: NSCoder) {fatalError()}
+        
+        override var frame: NSRect {
+            didSet {
+                guard frame.size != oldValue.size else { return }
+                updateLayers()
+            }
+        }
+        
+        private func updateLayers() {
             guard isEnabled else { return }
-            dirtyRect.fill(using: .clear)
+            
+            CATransaction.begin()
+            defer { CATransaction.commit() }
+            CATransaction.setDisableActions(true)
+            
+            if value.powers.count != keyLabelLayers.count {
+                keyLabelLayers = (0..<value.powers.count).map { channelIndex in                    Self.fundamentalFrequenciesWithFlats.map { hz, label in
+                        CATextLayer() ※ {
+                            $0.string = label
+                            $0.foregroundColor = FFTView.channelColors[channelIndex].cgColor
+                            $0.fontSize = 14
+                            $0.alignmentMode = .center
+                            $0.contentsScale = window?.backingScaleFactor ?? 2
+                        }
+                    }
+                }
+            }
 
             let minHz = CGFloat(value.minHz)
             let maxHz = CGFloat(value.maxHz)
@@ -229,7 +277,7 @@ final class FFTView: NSView {
                 }
             }
 
-            let xws: [(x: CGFloat, w: CGFloat, label: String, magnitudeForChannels: [Float?]?)] = zip(Self.fundamentalFrequenciesWithFlats.enumerated(), Self.fundamentalFrequenciesWithFlats.dropFirst()).compactMap { enumerated, next in
+            let xws: [(x: CGFloat, w: CGFloat, keyIndex: Int, magnitudeForChannels: [Float?]?)] = zip(Self.fundamentalFrequenciesWithFlats.enumerated(), Self.fundamentalFrequenciesWithFlats.dropFirst()).compactMap { enumerated, next in
                 let (i, current) = enumerated
                 guard case minHz...maxHz = current.hz else { return nil }
 
@@ -247,22 +295,21 @@ final class FFTView: NSView {
                     guard let prev = prevCurrent.0, let current = prevCurrent.1, let next = next else { return nil }
                     return prev < current && current > next ? current : nil
                 } : nil
-                return (x * (bounds.width - 1), w * (bounds.width - 1), current.label, magnitudeForChannels)
+                return (x * (bounds.width - 1), w * (bounds.width - 1), i, magnitudeForChannels)
             }
-
+            
             if let left = xws.first, let right = xws.last {
-                NSColor.white.setFill()
-                CGRect(x: left.x, y: 0, width: right.x + right.w, height: bounds.height).fill(using: .copy)
+                keyBackgroundLayer.frame = CGRect(x: left.x, y: 0, width: right.x + right.w, height: bounds.height)
             }
 
-            xws.forEach { x, w, label, magnitudeForChannels in
+            keyLabelLayers.forEach {$0.forEach {$0.isHidden = true}}
+            xws.forEach { x, w, keyIndex, magnitudeForChannels in
                 (magnitudeForChannels ?? []).enumerated().forEach { i, magnitude in
                     guard let magnitude = magnitude else { return }
-                    let ns = (label as NSString)
-                    var attrs = Self.channelAttrs[i % Self.channelAttrs.count]
-                    attrs[.foregroundColor] = (attrs[.foregroundColor] as! NSColor).withAlphaComponent(CGFloat(magnitude * 10))
-                    // NSLog("%@", "power = \(magnitude)")
-                    ns.draw(at: CGPoint(x: x, y: 0), withAttributes: attrs)
+                    let textLayer = keyLabelLayers[i][keyIndex]
+                    textLayer.isHidden = false
+                    textLayer.opacity = magnitude * 10
+                    textLayer.frame = CGRect(x: x - 18 / 2, y: 1, width: 18, height: bounds.height)
                 }
             }
         }
