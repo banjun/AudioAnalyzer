@@ -44,6 +44,7 @@ class ViewController: NSViewController {
     private lazy var fftBufferLengthPopup: NSPopUpButton = .init() ※ {
         $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfFFTBufferLengthPopup), options: nil)
         $0.removeAllItems()
+        $0.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         $0.addItems(withTitles: [256, 512, 1024, 2048, 4096, 8192, 16384].map {String($0)})
         $0.selectItem(at: 2)
     }
@@ -59,10 +60,19 @@ class ViewController: NSViewController {
     private lazy var upperFrequencyPopup: NSPopUpButton = .init() ※ {
         $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfUpperFrequencyPopup), options: nil)
         $0.removeAllItems()
-        $0.addItems(withTitles: [4410, 8820, 22050, 24000].map {String($0)})
+        $0.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
+        $0.addItems(withTitles: [1100, 2205, 4410, 8820, 22050, 24000].map {String($0)})
+        $0.selectItem(at: 2)
+    }
+    @Published @objc private var selectedIndexOfUpperFrequencyPopup: Int = 2
+    private lazy var lowerFrequencyPopup: NSPopUpButton = .init() ※ {
+        $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfLowerFrequencyPopup), options: nil)
+        $0.removeAllItems()
+        $0.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
+        $0.addItems(withTitles: [20, 100, 200, 400].map {String($0)})
         $0.selectItem(at: 0)
     }
-    @Published @objc private var selectedIndexOfUpperFrequencyPopup: Int = 0
+    @Published @objc private var selectedIndexOfLowerFrequencyPopup: Int = 0
 
     private let estimateMusicalKeysCheckbox = NSButton(checkboxWithTitle: "Keys", target: nil, action: nil)
 
@@ -120,6 +130,9 @@ class ViewController: NSViewController {
         let upperLabel = NSTextField(labelWithString: "Upper") ※ {
             $0.textColor = .tertiaryLabelColor
         }
+        let lowerLabel = NSTextField(labelWithString: "Lower") ※ {
+            $0.textColor = .tertiaryLabelColor
+        }
 
         let autolayout = view.northLayoutFormat(["p": 20], [
             "inputs": audioInputPopup,
@@ -137,6 +150,8 @@ class ViewController: NSViewController {
             "fftFrequencyAxisModePopup": fftFrequencyAxisModePopup,
             "upperLabel": upperLabel,
             "upperPopup": upperFrequencyPopup,
+            "lowerLabel": lowerLabel,
+            "lowerPopup": lowerFrequencyPopup,
             "keys": estimateMusicalKeysCheckbox,
         ])
         autolayout("H:|-p-[inputs]-p-[phones]-(>=p)-|")
@@ -147,15 +162,17 @@ class ViewController: NSViewController {
         autolayout("H:|-(>=p)-[fftBufferLengthLabel]-[fftBufferLengthPopup]-p-|")
         autolayout("H:|-(>=p)-[fftFrequencyAxisModePopup]-p-|")
         autolayout("H:|-(>=p)-[upperLabel]-[upperPopup]-p-|")
+        autolayout("H:|-(>=p)-[lowerLabel]-[lowerPopup]-p-|")
         autolayout("H:|-(>=p)-[keys]-p-|")
         autolayout("H:|-(>=p)-[fftFrequencyAxisModePopup]-p-|")
         autolayout("V:|-p-[inputs]-p-[performance]-p-[monitorCheckbox]-p-[levels]")
         autolayout("V:|-p-[phones(inputs)]-p-[performance]-p-[monitorVolume]-p-[levels]")
         autolayout("V:[levels]-p-[fft(>=128)]-p-|")
-        autolayout("V:[levels]-p-[fftBufferLengthPopup]-[fftFrequencyAxisModePopup]-[upperPopup]-[keys]-(>=96)-|")
+        autolayout("V:[levels]-p-[fftBufferLengthPopup]-[fftFrequencyAxisModePopup]-[upperPopup]-[lowerPopup]-[keys]-(>=96)-|")
         fftBufferLengthLabel.centerYAnchor.constraint(equalTo: fftBufferLengthPopup.centerYAnchor).isActive = true
         upperLabel.centerYAnchor.constraint(equalTo: upperFrequencyPopup.centerYAnchor).isActive = true
-        [fftBufferLengthLabel, fftBufferLengthPopup, upperLabel, upperFrequencyPopup, estimateMusicalKeysCheckbox].forEach {
+        lowerLabel.centerYAnchor.constraint(equalTo: lowerFrequencyPopup.centerYAnchor).isActive = true
+        [fftBufferLengthLabel, fftBufferLengthPopup, upperLabel, upperFrequencyPopup, lowerLabel, lowerFrequencyPopup, estimateMusicalKeysCheckbox].forEach {
             view.addSubview($0, positioned: .above, relativeTo: fftView)
         }
 
@@ -201,8 +218,14 @@ class ViewController: NSViewController {
 
         $selectedIndexOfUpperFrequencyPopup
             .compactMap {[unowned self] _ in Float(upperFrequencyPopup.titleOfSelectedItem ?? "")}
-            .filter {$0 > 20}
+            .filter {$0 >= 20}
             .assign(to: \.upperFrequency, on: fftView)
+            .store(in: &cancellables)
+
+        $selectedIndexOfLowerFrequencyPopup
+            .compactMap {[unowned self] _ in Float(lowerFrequencyPopup.titleOfSelectedItem ?? "")}
+            .filter {$0 >= 20}
+            .assign(to: \.lowerFrequency, on: fftView)
             .store(in: &cancellables)
 
         estimateMusicalKeysCheckbox.publisherForStateOnOff()

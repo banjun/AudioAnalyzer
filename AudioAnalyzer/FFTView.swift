@@ -12,7 +12,7 @@ private func keyScale(_ hz: CGFloat) -> CGFloat {
 final class FFTView: NSView {
     var value: DFT.Result = .init(powers: [], sampleRate: 44100) {
         didSet {
-            let minHz: Float = 20
+            let minHz: Float = lowerFrequency
             let maxHz = min(value.sampleRate / 2, upperFrequency)
             graphView.value = (value.powers, value.sampleRate, minHz, maxHz)
             tickView.value = (minHz, maxHz)
@@ -21,6 +21,7 @@ final class FFTView: NSView {
     }
 
     var upperFrequency: Float = 44100 / 2
+    var lowerFrequency: Float = 20
 
     var estimateMusicalKeys: Bool = false {
         didSet {
@@ -150,12 +151,12 @@ final class FFTView: NSView {
             case .linear where bounds.width > 1024:
                 keyLabels = [
                     minHz,
-                    440,
+                    minHz < 400 ? 440 : nil,
                     880,
                     1760,
                     3520,
                     maxHz,
-                ]
+                ].compactMap {$0}
             case .linear where bounds.width > 540:
                 keyLabels = [
                     minHz,
@@ -257,11 +258,8 @@ final class FFTView: NSView {
                 }
             }
         }
-        private lazy var keyBackgroundLayers: [CALayer] = Self.fundamentalFrequenciesWithFlats.map { hz, label in
-            CALayer() ※ {
-                $0.backgroundColor = .init(gray: 0.8, alpha: label.count > 1 ? 1 : 0)
-                layer!.addSublayer($0 ※ {$0.zPosition = 0})
-            }
+        private let keyBackgroundLayers: [CALayer] = fundamentalFrequenciesWithFlats.map { hz, label in
+            CALayer() ※ {$0.backgroundColor = .init(gray: 0.8, alpha: label.count > 1 ? 1 : 0)}
         }
         private var keyHighlightLayers: [[CALayer]] = [] {
             didSet {
@@ -281,6 +279,7 @@ final class FFTView: NSView {
             super.init(frame: .zero)
             wantsLayer = true
             layer!.addSublayer(keyBackgroundLayer)
+            keyBackgroundLayers.forEach {layer!.addSublayer($0)}
         }
         required init?(coder: NSCoder) {fatalError()}
         
@@ -348,8 +347,10 @@ final class FFTView: NSView {
 
             keyLabelLayers.forEach {$0.forEach {$0.isHidden = true}}
             keyHighlightLayers.forEach {$0.forEach {$0.isHidden = true}}
+            keyBackgroundLayers.forEach {$0.isHidden = true}
             xws.forEach { x, w, keyIndex, magnitudeForChannels in
                 let backgroundLayer = keyBackgroundLayers[keyIndex]
+                backgroundLayer.isHidden = false
                 backgroundLayer.frame = CGRect(x: x - w / 2, y: 0, width: w, height: bounds.height - 2)
 
                 (magnitudeForChannels ?? []).enumerated().forEach { i, magnitude in
