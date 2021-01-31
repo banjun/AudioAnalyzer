@@ -38,8 +38,8 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
     var dftValues: Published<DFT.Result>.Publisher { dft.$result }
     /// DFT sample length
     var sampleBufferForDFTLength: Int {
-        get {dft.sampleBufferForDFTLength}
-        set {dft.sampleBufferForDFTLength = newValue}
+        get {dft.bufferLength}
+        set {dft.bufferLength = newValue}
     }
 
     init(device: AVCaptureDevice) throws {

@@ -10,9 +10,9 @@ final class DFT {
     }
 
     /// DFT sample length
-    var sampleBufferForDFTLength = 1024
+    var bufferLength = 1024
     /// data buffer for DFT as input
-    private var sampleBufferForDFT: [[Float32]] = []
+    private var buffers: [[Float32]] = []
     /// use DFT instead of FFT at the API level of Accelerate as recommended, expecting the actual call choose FFT if available
     private var dft: vDSP.DFT<Float>?
 
@@ -22,13 +22,13 @@ final class DFT {
             return
         }
         do {
-            let sampleBufferForDFTLength = self.sampleBufferForDFTLength
-            let outputBufferForDFTLength = sampleBufferForDFTLength / 2
-            if sampleBufferForDFT.count != channelCount || (sampleBufferForDFT.contains {$0.count != sampleBufferForDFTLength}) {
-                sampleBufferForDFT = [[Float32]](repeating: [Float32](repeating: 0, count: sampleBufferForDFTLength), count: channelCount)
+            let bufferLength = self.bufferLength
+            let outputBufferLength = bufferLength / 2
+            if buffers.count != channelCount || (buffers.contains {$0.count != bufferLength}) {
+                buffers = [[Float32]](repeating: [Float32](repeating: 0, count: bufferLength), count: channelCount)
                 self.dft = nil
             }
-            guard let dft = self.dft ?? vDSP.DFT(count: sampleBufferForDFTLength, direction: .forward, transformType: .complexReal, ofType: Float.self) else { return }
+            guard let dft = self.dft ?? vDSP.DFT(count: bufferLength, direction: .forward, transformType: .complexReal, ofType: Float.self) else { return }
             self.dft = dft
 
             try sampleBuffer.withAudioBufferList { audioBufferList, blockBuffer in
@@ -38,16 +38,16 @@ final class DFT {
                     free(audioBufferList.unsafeMutablePointer)
                 }
                 guard let asbd = sampleBuffer.formatDescription?.audioStreamBasicDescription else { return }
-                let samplesCount = min(Int(sampleBuffer.numSamples), sampleBufferForDFTLength)
+                let samplesCount = min(Int(sampleBuffer.numSamples), bufferLength)
                 // remove old bufferred samples
-                (0..<channelCount).forEach {sampleBufferForDFT[$0].removeFirst(samplesCount)}
+                (0..<channelCount).forEach {buffers[$0].removeFirst(samplesCount)}
 
                 // append re-organizing by channels
                 if asbd.mFormatFlags & kAudioFormatFlagIsNonInterleaved > 0 {
                     // audioBufferList has n buffer for n channels, non-interleaved
                     audioBufferList.enumerated().forEach { channelIndex, buffer in
                         if asbd.mFormatFlags & kAudioFormatFlagIsFloat > 0, asbd.mBitsPerChannel == 32 {
-                            sampleBufferForDFT[channelIndex].append(contentsOf: UnsafeBufferPointer<Float32>(buffer).prefix(samplesCount))
+                            buffers[channelIndex].append(contentsOf: UnsafeBufferPointer<Float32>(buffer).prefix(samplesCount))
                         } else {
                             // not yet implemented
                             return
@@ -61,7 +61,7 @@ final class DFT {
                             (0..<channelCount).forEach { channelIndex in
                                 var channelSamples = [Float32](repeating: 0, count: samplesCount)
                                 vDSP_vadd(source.baseAddress! + channelIndex, vDSP_Stride(channelCount), channelSamples, 1, &channelSamples, 1, vDSP_Length(samplesCount))
-                                sampleBufferForDFT[channelIndex].append(contentsOf: channelSamples)
+                                buffers[channelIndex].append(contentsOf: channelSamples)
                             }
                         }
                     } else {
@@ -71,10 +71,10 @@ final class DFT {
                 }
 
                 // execute DFT
-                let inputImaginary = [Float32](repeating: 0, count: sampleBufferForDFTLength)
-                var magnitudes = [Float32](repeating: 0, count: outputBufferForDFTLength)
+                let inputImaginary = [Float32](repeating: 0, count: bufferLength)
+                var magnitudes = [Float32](repeating: 0, count: outputBufferLength)
                 let scalingFactor = 25.0 / Float(magnitudes.count)
-                result = .init(powers: sampleBufferForDFT.map { inputReal in
+                result = .init(powers: buffers.map { inputReal in
                     var output = dft.transform(inputReal: inputReal, inputImaginary: inputImaginary)
                     return output.real.withUnsafeMutableBufferPointer { outputReal in
                         output.imaginary.withUnsafeMutableBufferPointer { outputImaginary in
