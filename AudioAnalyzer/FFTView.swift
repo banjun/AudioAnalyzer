@@ -5,6 +5,9 @@ import NorthLayout
 private func melScale(_ hz: CGFloat) -> CGFloat {
     CGFloat(1127.010480 * log((hz / 700) + 1))
 }
+private func keyScale(_ hz: CGFloat) -> CGFloat {
+    (12 * (log(hz) / log(2)) / 440) + 9
+}
 
 final class FFTView: NSView {
     var value: DFT.Result = .init(powers: [], sampleRate: 44100) {
@@ -37,6 +40,7 @@ final class FFTView: NSView {
     enum FrequencyAxisMode {
         case linear
         case melScale
+        case keyScale
     }
 
     private let graphView = FFTGraphView()
@@ -81,8 +85,10 @@ final class FFTView: NSView {
         override func draw(_ dirtyRect: NSRect) {
             dirtyRect.fill(using: .clear)
 
-            let minMelScale = melScale(CGFloat(value.minHz))
-            let maxMelScale = melScale(CGFloat(value.maxHz))
+            let minMelScale: CGFloat = melScale(CGFloat(value.minHz))
+            let maxMelScale: CGFloat = melScale(CGFloat(value.maxHz))
+            let minKeyScale: CGFloat = keyScale(CGFloat(value.minHz))
+            let maxKeyScale: CGFloat = keyScale(CGFloat(value.maxHz))
 
             value.powers.enumerated().forEach { channelIndex, magnitudes in
                 let validMagnitudes = magnitudes.enumerated().filter {
@@ -101,6 +107,9 @@ final class FFTView: NSView {
                     case .melScale:
                         x = (melScale(hz) - minMelScale) / (maxMelScale - minMelScale)
                         w = (melScale(hz + hzWidth) - melScale(hz)) / (maxMelScale - minMelScale)
+                    case .keyScale:
+                        x = (keyScale(hz) - minKeyScale) / (maxKeyScale - minKeyScale)
+                        w = (keyScale(hz + hzWidth) - keyScale(hz)) / (maxKeyScale - minKeyScale)
                     }
                     CGRect(x: x * (bounds.width - 1),
                            y: 0,
@@ -137,7 +146,7 @@ final class FFTView: NSView {
             let maxHz = CGFloat(value.maxHz)
             let keyLabels: [CGFloat]
             switch frequencyAxisMode {
-            case .melScale: fallthrough
+            case .melScale, .keyScale: fallthrough
             case .linear where bounds.width > 1024:
                 keyLabels = [
                     minHz,
@@ -163,8 +172,10 @@ final class FFTView: NSView {
                 ]
             }
 
-            let minMelScale = melScale(minHz)
-            let maxMelScale = melScale(maxHz)
+            let minMelScale: CGFloat = melScale(minHz)
+            let maxMelScale: CGFloat = melScale(maxHz)
+            let minKeyScale: CGFloat = keyScale(minHz)
+            let maxKeyScale: CGFloat = keyScale(maxHz)
 
             let attrs: [NSAttributedString.Key: Any] = [.foregroundColor: NSColor.secondaryLabelColor]
             keyLabels.forEach { hz in
@@ -174,6 +185,8 @@ final class FFTView: NSView {
                     x = (hz - minHz) / (maxHz - minHz)
                 case .melScale:
                     x = (melScale(hz) - minMelScale) / (maxMelScale - minMelScale)
+                case .keyScale:
+                    x = (keyScale(hz) - minKeyScale) / (maxKeyScale - minKeyScale)
                 }
 
                 NSColor.labelColor.setFill()
@@ -200,8 +213,10 @@ final class FFTView: NSView {
         var isEnabled: Bool = false {
             didSet {
                 keyBackgroundLayer.isHidden = !isEnabled
+                keyBackgroundLayers.forEach {$0.isHidden = !isEnabled}
                 if !isEnabled {
                     keyLabelLayers = []
+                    keyHighlightLayers = []
                 }
             }
         }
@@ -290,8 +305,10 @@ final class FFTView: NSView {
 
             let minHz = CGFloat(value.minHz)
             let maxHz = CGFloat(value.maxHz)
-            let minMelScale = melScale(minHz)
-            let maxMelScale = melScale(maxHz)
+            let minMelScale: CGFloat = melScale(minHz)
+            let maxMelScale: CGFloat = melScale(maxHz)
+            let minKeyScale: CGFloat = keyScale(minHz)
+            let maxKeyScale: CGFloat = keyScale(maxHz)
 
             // key index -> channel -> magnitude?
             let keyIndexToMagnitudeForChannels: [[Float?]] = Self.fundamentalFrequencies.map { hz in
@@ -314,6 +331,9 @@ final class FFTView: NSView {
                 case .melScale:
                     x = (melScale(current.hz) - minMelScale) / (maxMelScale - minMelScale)
                     w = (melScale(next.hz) - melScale(current.hz)) / (maxMelScale - minMelScale)
+                case .keyScale:
+                    x = (keyScale(current.hz) - minKeyScale) / (maxKeyScale - minKeyScale)
+                    w = (keyScale(next.hz) - keyScale(current.hz)) / (maxKeyScale - minKeyScale)
                 }
                 let magnitudeForChannels: [Float?]? = i - 1 >= 0 && 1 + 1 < keyIndexToMagnitudeForChannels.count ? zip(zip(keyIndexToMagnitudeForChannels[i - 1], keyIndexToMagnitudeForChannels[i]), keyIndexToMagnitudeForChannels[i + 1]).map { prevCurrent, next in
                     guard let prev = prevCurrent.0, let current = prevCurrent.1, let next = next else { return nil }

@@ -51,7 +51,7 @@ class ViewController: NSViewController {
     private lazy var fftFrequencyAxisModePopup: NSPopUpButton = .init() ※ {
         $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfFFTFrequencyAxisModePopup), options: nil)
         $0.removeAllItems()
-        $0.addItems(withTitles: ["Linear", "MelScale"])
+        $0.addItems(withTitles: ["Linear", "MelScale", "Keyboard"])
         $0.selectItem(at: 1)
     }
     @Published @objc private var selectedIndexOfFFTFrequencyAxisModePopup: Int = 1
@@ -193,6 +193,7 @@ class ViewController: NSViewController {
                 switch fftFrequencyAxisModePopup.titleOfSelectedItem {
                 case "Linear": return .linear
                 case "MelScale": return .melScale
+                case "Keyboard": return .keyScale
                 default: return nil
                 }
             }.assign(to: \.frequencyAxisMode, on: fftView)
