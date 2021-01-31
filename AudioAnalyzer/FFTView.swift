@@ -217,8 +217,7 @@ final class FFTView: NSView {
         static let fundamentalFrequenciesWithFlats: [(hz: CGFloat, label: String)] = fundamentalFrequencies.enumerated().map {
             ($0.element, labelsWithFlats[($0.offset + 9) % labelsWithFlats.count])
         }
-        static let channelAttrs: [[NSAttributedString.Key: Any]] = FFTView.channelColors.map {[.foregroundColor: $0]}
-        
+
         let keyBackgroundLayer = CALayer() ※ {
             $0.backgroundColor = .white
         }
@@ -229,13 +228,40 @@ final class FFTView: NSView {
                 keyLabelLayers.forEach {$0.forEach {layer!.addSublayer($0 ※ {$0.zPosition = 1})}}
             }
         }
+        private func resetKeyLabelLayers() {
+            keyLabelLayers = (0..<value.powers.count).map { channelIndex in
+                Self.fundamentalFrequenciesWithFlats.map { hz, label in
+                    CATextLayer() ※ {
+                        $0.string = label
+                        $0.foregroundColor = FFTView.channelColors[channelIndex].cgColor
+                        $0.font = NSFont.monospacedSystemFont(ofSize: 14, weight: .semibold)
+                        $0.fontSize = 14
+                        $0.alignmentMode = .center
+                        $0.contentsScale = window?.backingScaleFactor ?? 2
+                    }
+                }
+            }
+        }
         private lazy var keyBackgroundLayers: [CALayer] = Self.fundamentalFrequenciesWithFlats.map { hz, label in
             CALayer() ※ {
                 $0.backgroundColor = .init(gray: 0.8, alpha: label.count > 1 ? 1 : 0)
                 layer!.addSublayer($0 ※ {$0.zPosition = 0})
             }
         }
-        
+        private var keyHighlightLayers: [[CALayer]] = [] {
+            didSet {
+                oldValue.forEach {$0.forEach {$0.removeFromSuperlayer()}}
+                keyHighlightLayers.forEach {$0.forEach {layer!.addSublayer($0 ※ {$0.zPosition = 1})}}
+            }
+        }
+        private func resetKeyHighlightLayers() {
+            keyHighlightLayers = (0..<value.powers.count).map { channelIndex in
+                Self.fundamentalFrequenciesWithFlats.map { hz, label in
+                    CALayer() ※ {$0.backgroundColor = FFTView.channelColors[channelIndex].cgColor}
+                }
+            }
+        }
+
         init() {
             super.init(frame: .zero)
             wantsLayer = true
@@ -258,18 +284,8 @@ final class FFTView: NSView {
             CATransaction.setDisableActions(true)
             
             if value.powers.count != keyLabelLayers.count {
-                keyLabelLayers = (0..<value.powers.count).map { channelIndex in                    Self.fundamentalFrequenciesWithFlats.map { hz, label in
-                        CATextLayer() ※ {
-                            $0.string = label
-                            $0.foregroundColor = FFTView.channelColors[channelIndex].cgColor
-                            $0.backgroundColor = FFTView.channelColors[channelIndex].withAlphaComponent(0.2).cgColor
-                            $0.font = NSFont.monospacedSystemFont(ofSize: 14, weight: .semibold)
-                            $0.fontSize = 14
-                            $0.alignmentMode = .center
-                            $0.contentsScale = window?.backingScaleFactor ?? 2
-                        }
-                    }
-                }
+                resetKeyLabelLayers()
+                resetKeyHighlightLayers()
             }
 
             let minHz = CGFloat(value.minHz)
@@ -307,11 +323,15 @@ final class FFTView: NSView {
             }
             
             if let left = xws.first, let right = xws.last {
-                keyBackgroundLayer.frame = CGRect(x: left.x, y: 0, width: right.x + right.w, height: bounds.height)
+                keyBackgroundLayer.frame = CGRect(x: left.x, y: 0, width: right.x + right.w, height: bounds.height - 2)
             }
 
             keyLabelLayers.forEach {$0.forEach {$0.isHidden = true}}
+            keyHighlightLayers.forEach {$0.forEach {$0.isHidden = true}}
             xws.forEach { x, w, keyIndex, magnitudeForChannels in
+                let backgroundLayer = keyBackgroundLayers[keyIndex]
+                backgroundLayer.frame = CGRect(x: x - w / 2, y: 0, width: w, height: bounds.height - 2)
+
                 (magnitudeForChannels ?? []).enumerated().forEach { i, magnitude in
                     guard let magnitude = magnitude else { return }
                     let textLayer = keyLabelLayers[i][keyIndex]
@@ -319,9 +339,12 @@ final class FFTView: NSView {
                     textLayer.opacity = magnitude * 10
                     textLayer.frame = CGRect(x: x - 18 / 2, y: 0, width: 18, height: bounds.height)
                     textLayer.transform = CATransform3DMakeScale(min(w, 18) / 18, 1, 1)
+
+                    let highlightLayer = keyHighlightLayers[i][keyIndex]
+                    highlightLayer.isHidden = false
+                    highlightLayer.opacity = magnitude * 10
+                    highlightLayer.frame = CGRect(x: x - w / 2, y: bounds.height - 2, width: w, height: 2)
                 }
-                let backgroundLayer = keyBackgroundLayers[keyIndex]
-                backgroundLayer.frame = CGRect(x: x - w / 2, y: 0, width: w, height: bounds.height)
             }
         }
     }
