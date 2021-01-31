@@ -84,15 +84,15 @@ class ViewController: NSViewController {
                     .assign(to: \.values, on: levelsStackView)
                     .store(in: &cancellables)
 
-                session.$fftValues.receive(on: DispatchQueue.main)
+                session.dftValues.receive(on: DispatchQueue.main)
                     .assign(to: \.value, on: fftView)
                     .store(in: &cancellables)
 
                 $selectedIndexOfFFTBufferLengthPopup
                     .map {[unowned self] _ in fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024}
-                    .assign(to: \.sampleBufferForFFTLength, on: session)
+                    .assign(to: \.sampleBufferForDFTLength, on: session)
                     .store(in: &cancellables)
-                session.sampleBufferForFFTLength = fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024
+                session.sampleBufferForDFTLength = fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024
 
                 session.previewVolume.value = monitorVolumeSliderValue
                 $monitorVolumeSliderValue.removeDuplicates()

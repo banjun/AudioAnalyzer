@@ -7,7 +7,7 @@ private func melScale(_ hz: CGFloat) -> CGFloat {
 }
 
 final class FFTView: NSView {
-    var value: (powers: [[Float32]], sampleRate: Float) = ([], 44100) {
+    var value: DFT.Result = .init(powers: [], sampleRate: 44100) {
         didSet {
             let minHz: Float = 20
             let maxHz = min(value.sampleRate / 2, upperFrequency)
