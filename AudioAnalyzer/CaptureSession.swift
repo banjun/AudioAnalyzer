@@ -1,6 +1,5 @@
 import AVKit
 import Combine
-import Accelerate
 
 final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
     deinit { NSLog("%@", "deinit \(self.debugDescription)") }
