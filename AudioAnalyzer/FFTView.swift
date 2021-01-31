@@ -226,7 +226,13 @@ final class FFTView: NSView {
         var keyLabelLayers: [[CATextLayer]] = [] {
             didSet {
                 oldValue.forEach {$0.forEach {$0.removeFromSuperlayer()}}
-                keyLabelLayers.forEach {$0.forEach {layer!.addSublayer($0)}}
+                keyLabelLayers.forEach {$0.forEach {layer!.addSublayer($0 ※ {$0.zPosition = 1})}}
+            }
+        }
+        private lazy var keyBackgroundLayers: [CALayer] = Self.fundamentalFrequenciesWithFlats.map { hz, label in
+            CALayer() ※ {
+                $0.backgroundColor = .init(gray: 0.8, alpha: label.count > 1 ? 1 : 0)
+                layer!.addSublayer($0 ※ {$0.zPosition = 0})
             }
         }
         
@@ -256,6 +262,8 @@ final class FFTView: NSView {
                         CATextLayer() ※ {
                             $0.string = label
                             $0.foregroundColor = FFTView.channelColors[channelIndex].cgColor
+                            $0.backgroundColor = FFTView.channelColors[channelIndex].withAlphaComponent(0.2).cgColor
+                            $0.font = NSFont.monospacedSystemFont(ofSize: 14, weight: .semibold)
                             $0.fontSize = 14
                             $0.alignmentMode = .center
                             $0.contentsScale = window?.backingScaleFactor ?? 2
@@ -309,8 +317,11 @@ final class FFTView: NSView {
                     let textLayer = keyLabelLayers[i][keyIndex]
                     textLayer.isHidden = false
                     textLayer.opacity = magnitude * 10
-                    textLayer.frame = CGRect(x: x - 18 / 2, y: 1, width: 18, height: bounds.height)
+                    textLayer.frame = CGRect(x: x - 18 / 2, y: 0, width: 18, height: bounds.height)
+                    textLayer.transform = CATransform3DMakeScale(min(w, 18) / 18, 1, 1)
                 }
+                let backgroundLayer = keyBackgroundLayers[keyIndex]
+                backgroundLayer.frame = CGRect(x: x - w / 2, y: 0, width: w, height: bounds.height)
             }
         }
     }
