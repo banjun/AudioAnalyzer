@@ -17,6 +17,7 @@
 		EA371C0C25B08F45001476F9 /* AudioDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371C0B25B08F45001476F9 /* AudioDevice.swift */; };
 		EA371C1925B097C7001476F9 /* CaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371C1825B097C7001476F9 /* CaptureSession.swift */; };
 		EA3ED0E525B4BB3900092398 /* FFTView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA3ED0E425B4BB3900092398 /* FFTView.swift */; };
+		EA509DF125C686B000359691 /* CoreMedia.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA509DF025C686B000359691 /* CoreMedia.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +36,7 @@
 		EA371C0B25B08F45001476F9 /* AudioDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDevice.swift; sourceTree = "<group>"; };
 		EA371C1825B097C7001476F9 /* CaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSession.swift; sourceTree = "<group>"; };
 		EA3ED0E425B4BB3900092398 /* FFTView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFTView.swift; sourceTree = "<group>"; };
+		EA509DF025C686B000359691 /* CoreMedia.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMedia.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +96,7 @@
 				EA134F2225B45F0D0081F834 /* CannelLevelIndicator.swift */,
 				EA3ED0E425B4BB3900092398 /* FFTView.swift */,
 				EA134F1F25B455AE0081F834 /* Combine.swift */,
+				EA509DF025C686B000359691 /* CoreMedia.swift */,
 				EA371BFE25B08EFC001476F9 /* Assets.xcassets */,
 				EA371C0025B08EFC001476F9 /* Main.storyboard */,
 				EA371C0325B08EFC001476F9 /* Info.plist */,
@@ -204,6 +207,7 @@
 				EA371BFD25B08EFA001476F9 /* ViewController.swift in Sources */,
 				EA3ED0E525B4BB3900092398 /* FFTView.swift in Sources */,
 				EA134F2325B45F0D0081F834 /* CannelLevelIndicator.swift in Sources */,
+				EA509DF125C686B000359691 /* CoreMedia.swift in Sources */,
 				EA371BFB25B08EFA001476F9 /* AppDelegate.swift in Sources */,
 				EA371C0C25B08F45001476F9 /* AudioDevice.swift in Sources */,
 				EA134F2025B455AE0081F834 /* Combine.swift in Sources */,

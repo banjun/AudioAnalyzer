@@ -54,21 +54,7 @@ final class CaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
                 let prevTime = prev.buffer.outputPresentationTimeStamp.seconds
                 let currentTime = current.buffer.outputPresentationTimeStamp.seconds
                 let interval = String(format: "%.3f", currentTime - prevTime)
-                let format: String = current.buffer.formatDescription?.audioStreamBasicDescription.map {
-                    [
-                        String($0.mSampleRate) + "Hz",
-                        String($0.mBytesPerFrame) + "bytes/f",
-                        String($0.mBitsPerChannel) + "bits/ch",
-                        // String($0.mChannelsPerFrame) + "ch/f",
-                        $0.mFormatFlags & kAudioFormatFlagIsFloat > 0 ? "Float" : "Integer",
-                        $0.mFormatFlags & kAudioFormatFlagIsBigEndian > 0 ? "BE" : "LE",
-                        $0.mFormatFlags & kAudioFormatFlagIsSignedInteger > 0 ? "Signed" : "Unsigned",
-                        $0.mFormatFlags & kAudioFormatFlagIsPacked > 0 ? "Packed" : "NotPacked",
-                        $0.mFormatFlags & kAudioFormatFlagIsAlignedHigh > 0 ? "AlignedHigh" : "AlignedLow",
-                        $0.mFormatFlags & kAudioFormatFlagIsNonInterleaved > 0 ? "NonInterleaved" : "Interleaved",
-                        $0.mFormatFlags & kAudioFormatFlagIsNonMixable > 0 ? "NonMixable" : "Mixable",
-                    ].compactMap {$0}.joined(separator: ", ")
-                } ?? "unknown"
+                let format = current.buffer.formatDescription?.audioStreamBasicDescription?.formatDescriptionString ?? "unknown"
                 self.performance = "\(current.buffer.numSamples) samples (\(duration) secs) in interval of \(interval) secs, format = [\(format)]"
                 self.levels = current.connection.audioChannels.map {$0.averagePowerLevel}
             }.store(in: &cancellables)
