@@ -239,7 +239,7 @@ final class FFTView: NSView {
                 Self.fundamentalFrequenciesWithFlats.map { hz, label in
                     CATextLayer() ※ {
                         $0.string = label
-                        $0.foregroundColor = FFTView.channelColors[channelIndex].cgColor
+                        $0.foregroundColor = FFTView.channelColors[channelIndex % FFTView.channelColors.count].cgColor
                         $0.font = NSFont.monospacedSystemFont(ofSize: 14, weight: .semibold)
                         $0.fontSize = 14
                         $0.alignmentMode = .center
@@ -260,7 +260,7 @@ final class FFTView: NSView {
         private func resetKeyHighlightLayers() {
             keyHighlightLayers = (0..<value.powers.count).map { channelIndex in
                 Self.fundamentalFrequenciesWithFlats.map { hz, label in
-                    CALayer() ※ {$0.backgroundColor = FFTView.channelColors[channelIndex].cgColor}
+                    CALayer() ※ {$0.backgroundColor = FFTView.channelColors[channelIndex % FFTView.channelColors.count].cgColor}
                 }
             }
         }
