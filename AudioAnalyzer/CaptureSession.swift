@@ -107,13 +107,14 @@ final class AppCaptureSession: NSObject, SCStreamOutput {
     init(app: SCRunningApplication, display: SCDisplay) {
         let c = SCStreamConfiguration()
         c.capturesAudio = true
+        c.excludesCurrentProcessAudio = true
 
         // NOTE: how to disable video capture?
         c.width = 128
         c.height = 128
         c.minimumFrameInterval = .init(value: 1, timescale: 10)
 
-        self.stream = SCStream(filter: SCContentFilter.init(display: display, excludingWindows: []), configuration: c, delegate: nil)
+        self.stream = SCStream(filter: SCContentFilter.init(display: display, including: [app], exceptingWindows: []), configuration: c, delegate: nil)
         super.init()
 
         $sample.skipNil().combinePrevious()
