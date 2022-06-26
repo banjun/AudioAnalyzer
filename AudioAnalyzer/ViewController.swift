@@ -12,10 +12,19 @@ class ViewController: NSViewController {
     @Published @objc private var selectedIndexOfAudioInputPopup: Int = -1 {
         didSet {
             let devices = AudioDevice.shared.inputDevices
-            guard case 0..<devices.count = selectedIndexOfAudioInputPopup else { return }
-            let device = devices[selectedIndexOfAudioInputPopup]
-            title = device.localizedName
-            self.session = try? CaptureSession(device: device)
+            let apps = AudioApp.shared.apps
+            switch selectedIndexOfAudioInputPopup {
+            case 0..<devices.count:
+                let device = devices[selectedIndexOfAudioInputPopup]
+                title = device.localizedName
+                self.session = try? CaptureSession(device: device)
+            case devices.count..<(devices.count + apps.count):
+                let app = apps[selectedIndexOfAudioInputPopup - devices.count]
+                title = app.applicationName
+                self.appSession = try? AppCaptureSession(app: app, display: AudioApp.shared.displays.first!)
+            default:
+                return
+            }
         }
     }
 
@@ -85,6 +94,8 @@ class ViewController: NSViewController {
             monitorVolumeSlider.isHidden = true
 
             if let session = session {
+                self.appSession = nil
+
                 session.$performance.removeDuplicates().receive(on: RunLoop.main)
                     .assign(to: \.stringValue, on: performanceLabel)
                     .store(in: &cancellables)
@@ -108,6 +119,42 @@ class ViewController: NSViewController {
                 $monitorVolumeSliderValue.removeDuplicates()
                     .subscribe(session.previewVolume)
                     .store(in: &cancellables)
+
+                session.startRunning()
+            }
+        }
+    }
+
+    private var appSession: AppCaptureSession? {
+        didSet {
+            oldValue?.stopRunning()
+            performanceLabel.stringValue = ""
+            levelsStackView.values.removeAll()
+            monitorCheckbox.state = .off
+            monitorVolumeSlider.isHidden = true
+
+            if let session = appSession {
+                self.session = nil
+
+                session.$performance.removeDuplicates().receive(on: RunLoop.main)
+                    .assign(to: \.stringValue, on: performanceLabel)
+                    .store(in: &cancellables)
+
+                session.$levels.removeDuplicates().receive(on: DispatchQueue.main)
+                    .map {$0.enumerated().map {(String($0.offset + 1), $0.element)}}
+                    .assign(to: \.values, on: levelsStackView)
+                    .store(in: &cancellables)
+
+                session.dftValues.receive(on: DispatchQueue.main)
+                    .assign(to: \.value, on: fftView)
+                    .store(in: &cancellables)
+                
+                $selectedIndexOfFFTBufferLengthPopup
+                    .map {[unowned self] _ in fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024}
+                    .assign(to: \.sampleBufferForDFTLength, on: session)
+                    .store(in: &cancellables)
+                session.sampleBufferForDFTLength = fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024
+
 
                 session.startRunning()
             }
@@ -178,7 +225,11 @@ class ViewController: NSViewController {
 
         AudioDevice.shared.$inputDevices
             .prepend(AudioDevice.shared.inputDevices)
-            .map {$0.map(\.localizedName)}.sink { [unowned self] names in
+            .map {$0.map(\.localizedName)}
+            .combineLatest(AudioApp.shared.$apps.map {$0.map {$0.applicationName}})
+            .map {$0 + $1}
+            .receive(on: DispatchQueue.main)
+            .sink { [unowned self] names in
                 let title = self.audioInputPopup.titleOfSelectedItem
                 defer {
                     if let title = title {
@@ -231,6 +282,12 @@ class ViewController: NSViewController {
         estimateMusicalKeysCheckbox.publisherForStateOnOff()
             .assign(to: \.estimateMusicalKeys, on: fftView)
             .store(in: &cancellables)
+
+        if #available(macOS 12.3, *) {
+            AudioApp.shared.$apps.sink { apps in
+                NSLog("%@", "apps = \(apps)")
+            }.store(in: &cancellables)
+        }
     }
 }
 

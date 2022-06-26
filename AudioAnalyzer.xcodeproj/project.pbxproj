@@ -19,6 +19,7 @@
 		EA3ED0E525B4BB3900092398 /* FFTView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA3ED0E425B4BB3900092398 /* FFTView.swift */; };
 		EA509DF125C686B000359691 /* CoreMedia.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA509DF025C686B000359691 /* CoreMedia.swift */; };
 		EA509DF925C6888D00359691 /* DFT.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA509DF825C6888D00359691 /* DFT.swift */; };
+		EAB17CA42867583B00D8D900 /* AudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB17CA32867583B00D8D900 /* AudioApp.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,7 @@
 		EA3ED0E425B4BB3900092398 /* FFTView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFTView.swift; sourceTree = "<group>"; };
 		EA509DF025C686B000359691 /* CoreMedia.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMedia.swift; sourceTree = "<group>"; };
 		EA509DF825C6888D00359691 /* DFT.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DFT.swift; sourceTree = "<group>"; };
+		EAB17CA32867583B00D8D900 /* AudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +96,7 @@
 				EA371BFA25B08EFA001476F9 /* AppDelegate.swift */,
 				EA371BFC25B08EFA001476F9 /* ViewController.swift */,
 				EA371C0B25B08F45001476F9 /* AudioDevice.swift */,
+				EAB17CA32867583B00D8D900 /* AudioApp.swift */,
 				EA371C1825B097C7001476F9 /* CaptureSession.swift */,
 				EA509DF825C6888D00359691 /* DFT.swift */,
 				EA134F2225B45F0D0081F834 /* CannelLevelIndicator.swift */,
@@ -215,6 +218,7 @@
 				EA371BFB25B08EFA001476F9 /* AppDelegate.swift in Sources */,
 				EA371C0C25B08F45001476F9 /* AudioDevice.swift in Sources */,
 				EA134F2025B455AE0081F834 /* Combine.swift in Sources */,
+				EAB17CA42867583B00D8D900 /* AudioApp.swift in Sources */,
 				EA371C1925B097C7001476F9 /* CaptureSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -365,6 +369,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = jp.banjun.exp.AudioAnalyzer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -389,6 +394,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = jp.banjun.exp.AudioAnalyzer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
