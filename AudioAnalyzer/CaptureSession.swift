@@ -127,7 +127,23 @@ final class AppCaptureSession: NSObject, SCStreamOutput {
                 let interval = String(format: "%.3f", currentTime - prevTime)
                 let format = current.buffer.formatDescription?.audioStreamBasicDescription?.formatDescriptionString ?? "unknown"
                 self.performance = "\(current.buffer.numSamples) samples (\(duration) secs) in interval of \(interval) secs, format = [\(format)]"
-                self.levels = (0..<current.channelCount).map {_ in 42} // TODO: $0.averagePowerLevel}
+                do {
+                    try current.buffer.withAudioBufferList { audioBufferList, blockBuffer in
+                        defer {
+                            // audioBufferList requires free. refs https://daisuke-t-jp.hatenablog.com/entry/2019/10/15/AVCaptureSession
+                            // observed as swift_slowAlloc in Malloc 32 Bytes on Instruments
+                            free(audioBufferList.unsafeMutablePointer)
+                        }
+                        let samplesCount = current.buffer.numSamples
+
+                        self.levels = audioBufferList.map { buffer in
+                            // mimic average power level of AVFoundation
+                            10 * log10f(UnsafeBufferPointer<Float32>(buffer).reduce(into: 0) {$0 += $1 * $1} / Float(samplesCount))
+                        }
+                    }
+                } catch {
+                    // NSLog("%@", "error at sampleBuffer.withAudioBufferList: \(String(describing: error))")
+                }
             }.store(in: &cancellables)
 
         try! self.stream.addStreamOutput(self, type: .audio, sampleHandlerQueue: nil)
