@@ -2,6 +2,8 @@ import Cocoa
 import NorthLayout
 import Ikemen
 import Combine
+import AVKit
+import ScreenCaptureKit
 
 class ViewController: NSViewController {
     deinit {NSLog("%@", "deinit \(self.debugDescription)")}
@@ -11,21 +13,87 @@ class ViewController: NSViewController {
     }
     @Published @objc private var selectedIndexOfAudioInputPopup: Int = -1 {
         didSet {
-            let devices = AudioDevice.shared.inputDevices
-            let apps = AudioApp.shared.apps
-            switch selectedIndexOfAudioInputPopup {
-            case 0..<devices.count:
-                let device = devices[selectedIndexOfAudioInputPopup]
-                title = device.localizedName
-                self.session = try? CaptureSession(device: device)
-            case devices.count..<(devices.count + apps.count):
-                let app = apps[selectedIndexOfAudioInputPopup - devices.count]
-                title = app.applicationName
-                self.appSession = try? AppCaptureSession(app: app, display: AudioApp.shared.displays.first!)
-            default:
-                return
+            guard 0..<sourcePopupItems.count ~= selectedIndexOfAudioInputPopup else { return }
+            switch sourcePopupItems[selectedIndexOfAudioInputPopup] {
+            case .none:
+                title = nil
+                session = nil
+                appSession = nil
+            case .source(let source):
+                title = source.title
+                switch source {
+                case .device(let device):
+                    session = try? AVKitCaptureSession(device: device)
+                case .system:
+                    appSession = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: nil, display: $0)}
+                case .app(let app):
+                    appSession = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: app, display: $0)}
+                }
+            case .separator:
+                break
             }
         }
+    }
+
+    @Published private var sources: [Source] = [] {
+        didSet {
+            sourcePopupItems = sources.reduce(into: [.none]) { ss, s in
+                if case .source(let last) = ss.last, last.caseIdentifier != s.caseIdentifier {
+                    // insert separator between different groups
+                    ss.append(.separator)
+                }
+                ss.append(.source(s))
+            }
+        }
+    }
+    enum Source: Equatable {
+        case device(AVCaptureDevice)
+        case system
+        case app(SCRunningApplication)
+
+        var caseIdentifier: String {
+            switch self {
+            case .device: return "device"
+            case .system: return "system"
+            case .app: return "app"
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .device(let device): return device.localizedName
+            case .system: return "System Audio"
+            case .app(let app): return app.applicationName + " (\(app.processID))"
+            }
+        }
+    }
+    @Published private var sourcePopupItems: [PopupItem] = [] {
+        didSet {
+            // preserve selection
+            let title = audioInputPopup.titleOfSelectedItem
+            defer {
+                if let title = title {
+                    audioInputPopup.selectItem(withTitle: title)
+                }
+            }
+
+            audioInputPopup.menu?.removeAllItems()
+            sourcePopupItems.forEach {
+                switch $0 {
+                case .none:
+                    audioInputPopup.menu?.addItem(NSMenuItem(title: "", action: nil, keyEquivalent: ""))
+                case .source(let source):
+                    audioInputPopup.menu?.addItem(NSMenuItem(title: source.title, action: nil, keyEquivalent: ""))
+                case .separator:
+                    audioInputPopup.menu?.addItem(NSMenuItem.separator())
+                }
+            }
+        }
+    }
+    enum PopupItem {
+        case none
+        case source(Source)
+        case separator
     }
 
     private let discoversPhonesCheckbox = NSButton(checkboxWithTitle: "Includes Mobiles", target: nil, action: nil)
@@ -85,7 +153,7 @@ class ViewController: NSViewController {
 
     private let estimateMusicalKeysCheckbox = NSButton(checkboxWithTitle: "Keys", target: nil, action: nil)
 
-    private var session: CaptureSession? {
+    private var session: AVKitCaptureSession? {
         didSet {
             oldValue?.stopRunning()
             performanceLabel.stringValue = ""
@@ -94,7 +162,7 @@ class ViewController: NSViewController {
             monitorVolumeSlider.isHidden = true
 
             if let session = session {
-                self.appSession = nil
+                appSession = nil
 
                 session.$performance.removeDuplicates().receive(on: RunLoop.main)
                     .assign(to: \.stringValue, on: performanceLabel)
@@ -125,7 +193,7 @@ class ViewController: NSViewController {
         }
     }
 
-    private var appSession: AppCaptureSession? {
+    private var appSession: ScreenCaptureKitCaptureSession? {
         didSet {
             oldValue?.stopRunning()
             performanceLabel.stringValue = ""
@@ -223,25 +291,14 @@ class ViewController: NSViewController {
             view.addSubview($0, positioned: .above, relativeTo: fftView)
         }
 
-        AudioDevice.shared.$inputDevices
-            .prepend(AudioDevice.shared.inputDevices)
-            .map {$0.map(\.localizedName)}
-            .combineLatest(AudioApp.shared.$apps.map {$0.map {$0.applicationName}})
-            .map {$0 + $1}
+        Publishers.CombineLatest(AudioDevice.shared.$inputDevices, AudioApp.shared.$apps)
             .receive(on: DispatchQueue.main)
-            .sink { [unowned self] names in
-                let title = self.audioInputPopup.titleOfSelectedItem
-                defer {
-                    if let title = title {
-                        self.audioInputPopup.selectItem(withTitle: title)
-                    } else if !names.isEmpty {
-                        self.audioInputPopup.selectItem(at: 0)
-                        self.selectedIndexOfAudioInputPopup = 0
-                    }
-                }
-
-                self.audioInputPopup.removeAllItems()
-                self.audioInputPopup.addItems(withTitles: names)
+            .sink { [unowned self] devices, apps in
+                self.sources = [
+                    devices.map {.device($0)},
+                    apps.isEmpty ? [] : [.system],
+                    apps.map {.app($0)}
+                ].flatMap {$0}
             }.store(in: &cancellables)
 
         AudioDevice.shared.discoversPhones.map {$0 ? NSControl.StateValue.on : .off}
@@ -288,6 +345,11 @@ class ViewController: NSViewController {
                 NSLog("%@", "apps = \(apps)")
             }.store(in: &cancellables)
         }
+    }
+
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        AudioApp.shared.reloadApps()
     }
 }
 
