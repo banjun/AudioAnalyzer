@@ -20,6 +20,7 @@
 		EA509DF125C686B000359691 /* CoreMedia.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA509DF025C686B000359691 /* CoreMedia.swift */; };
 		EA509DF925C6888D00359691 /* DFT.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA509DF825C6888D00359691 /* DFT.swift */; };
 		EAA467C92869FB980037686B /* ScreenCaptureKitCaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA467C82869FB980037686B /* ScreenCaptureKitCaptureSession.swift */; };
+		EAA467CB287027680037686B /* SessionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA467CA287027680037686B /* SessionType.swift */; };
 		EAB17CA42867583B00D8D900 /* AudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB17CA32867583B00D8D900 /* AudioApp.swift */; };
 /* End PBXBuildFile section */
 
@@ -42,6 +43,7 @@
 		EA509DF025C686B000359691 /* CoreMedia.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMedia.swift; sourceTree = "<group>"; };
 		EA509DF825C6888D00359691 /* DFT.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DFT.swift; sourceTree = "<group>"; };
 		EAA467C82869FB980037686B /* ScreenCaptureKitCaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureKitCaptureSession.swift; sourceTree = "<group>"; };
+		EAA467CA287027680037686B /* SessionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionType.swift; sourceTree = "<group>"; };
 		EAB17CA32867583B00D8D900 /* AudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -99,6 +101,7 @@
 				EA371BFC25B08EFA001476F9 /* ViewController.swift */,
 				EA371C0B25B08F45001476F9 /* AudioDevice.swift */,
 				EAB17CA32867583B00D8D900 /* AudioApp.swift */,
+				EAA467CA287027680037686B /* SessionType.swift */,
 				EA371C1825B097C7001476F9 /* AVKitCaptureSession.swift */,
 				EAA467C82869FB980037686B /* ScreenCaptureKitCaptureSession.swift */,
 				EA509DF825C6888D00359691 /* DFT.swift */,
@@ -223,6 +226,7 @@
 				EA371C0C25B08F45001476F9 /* AudioDevice.swift in Sources */,
 				EA134F2025B455AE0081F834 /* Combine.swift in Sources */,
 				EAB17CA42867583B00D8D900 /* AudioApp.swift in Sources */,
+				EAA467CB287027680037686B /* SessionType.swift in Sources */,
 				EA371C1925B097C7001476F9 /* AVKitCaptureSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

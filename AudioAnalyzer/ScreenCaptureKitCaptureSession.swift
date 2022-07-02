@@ -2,12 +2,14 @@ import Foundation
 import Combine
 import ScreenCaptureKit
 
-final class ScreenCaptureKitCaptureSession: NSObject, SCStreamOutput {
+final class ScreenCaptureKitCaptureSession: NSObject, SCStreamOutput, SessionType {
     private let stream: SCStream
 
     @Published private(set) var sample: (buffer: CMSampleBuffer, channelCount: Int)?
     @Published private(set) var performance: String = "--"
     @Published private(set) var levels: [Float] = []
+    var performancePublisher: Published<String>.Publisher { $performance }
+    var levelsPublisher: Published<[Float]>.Publisher { $levels }
 
     private let dft = DFT()
     /// DFT results

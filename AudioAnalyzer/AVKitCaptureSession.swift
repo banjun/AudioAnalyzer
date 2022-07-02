@@ -1,7 +1,7 @@
 import AVKit
 import Combine
 
-final class AVKitCaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
+final class AVKitCaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate, MonitorSessionType {
     deinit { NSLog("%@", "deinit \(self.debugDescription)") }
 
     private let device: AVCaptureDevice
@@ -27,6 +27,9 @@ final class AVKitCaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferD
     @Published private(set) var sample: (buffer: CMSampleBuffer, connection: AVCaptureConnection)?
     @Published private(set) var performance: String = "--"
     @Published private(set) var levels: [Float] = []
+    var performancePublisher: Published<String>.Publisher { $performance }
+    var levelsPublisher: Published<[Float]>.Publisher { $levels }
+
     var enablesMonitor: Bool = false {
         didSet {
             previewOutput = enablesMonitor ? AVCaptureAudioPreviewOutput() : nil

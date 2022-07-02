@@ -18,16 +18,15 @@ class ViewController: NSViewController {
             case .none:
                 title = nil
                 session = nil
-                appSession = nil
             case .source(let source):
                 title = source.title
                 switch source {
                 case .device(let device):
                     session = try? AVKitCaptureSession(device: device)
                 case .system:
-                    appSession = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: nil, display: $0)}
+                    session = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: nil, display: $0)}
                 case .app(let app):
-                    appSession = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: app, display: $0)}
+                    session = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: app, display: $0)}
                 }
             case .separator:
                 break
@@ -153,7 +152,7 @@ class ViewController: NSViewController {
 
     private let estimateMusicalKeysCheckbox = NSButton(checkboxWithTitle: "Keys", target: nil, action: nil)
 
-    private var session: AVKitCaptureSession? {
+    private var session: SessionType? {
         didSet {
             oldValue?.stopRunning()
             performanceLabel.stringValue = ""
@@ -162,53 +161,11 @@ class ViewController: NSViewController {
             monitorVolumeSlider.isHidden = true
 
             if let session = session {
-                appSession = nil
-
-                session.$performance.removeDuplicates().receive(on: RunLoop.main)
+                session.performancePublisher.removeDuplicates().receive(on: RunLoop.main)
                     .assign(to: \.stringValue, on: performanceLabel)
                     .store(in: &cancellables)
 
-                session.$levels.removeDuplicates().receive(on: DispatchQueue.main)
-                    .map {$0.enumerated().map {(String($0.offset + 1), $0.element)}}
-                    .assign(to: \.values, on: levelsStackView)
-                    .store(in: &cancellables)
-
-                session.dftValues.receive(on: DispatchQueue.main)
-                    .assign(to: \.value, on: fftView)
-                    .store(in: &cancellables)
-
-                $selectedIndexOfFFTBufferLengthPopup
-                    .map {[unowned self] _ in fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024}
-                    .assign(to: \.sampleBufferForDFTLength, on: session)
-                    .store(in: &cancellables)
-                session.sampleBufferForDFTLength = fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024
-
-                session.previewVolume.value = monitorVolumeSliderValue
-                $monitorVolumeSliderValue.removeDuplicates()
-                    .subscribe(session.previewVolume)
-                    .store(in: &cancellables)
-
-                session.startRunning()
-            }
-        }
-    }
-
-    private var appSession: ScreenCaptureKitCaptureSession? {
-        didSet {
-            oldValue?.stopRunning()
-            performanceLabel.stringValue = ""
-            levelsStackView.values.removeAll()
-            monitorCheckbox.state = .off
-            monitorVolumeSlider.isHidden = true
-
-            if let session = appSession {
-                self.session = nil
-
-                session.$performance.removeDuplicates().receive(on: RunLoop.main)
-                    .assign(to: \.stringValue, on: performanceLabel)
-                    .store(in: &cancellables)
-
-                session.$levels.removeDuplicates().receive(on: DispatchQueue.main)
+                session.levelsPublisher.removeDuplicates().receive(on: DispatchQueue.main)
                     .map {$0.enumerated().map {(String($0.offset + 1), $0.element)}}
                     .assign(to: \.values, on: levelsStackView)
                     .store(in: &cancellables)
@@ -223,6 +180,12 @@ class ViewController: NSViewController {
                     .store(in: &cancellables)
                 session.sampleBufferForDFTLength = fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024
 
+                if let monitorSession = session as? MonitorSessionType {
+                    monitorSession.previewVolume.value = monitorVolumeSliderValue
+                    $monitorVolumeSliderValue.removeDuplicates()
+                        .subscribe(monitorSession.previewVolume)
+                        .store(in: &cancellables)
+                }
 
                 session.startRunning()
             }
@@ -310,7 +273,7 @@ class ViewController: NSViewController {
             .store(in: &cancellables)
 
         monitorCheckbox.publisherForStateOnOff()
-            .sink { [unowned self] in session?.enablesMonitor = $0 }
+            .sink { [unowned self] in (session as? MonitorSessionType)?.enablesMonitor = $0 }
             .store(in: &cancellables)
 
         $selectedIndexOfFFTFrequencyAxisModePopup
