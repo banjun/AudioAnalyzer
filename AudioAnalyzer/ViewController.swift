@@ -154,6 +154,7 @@ class ViewController: NSViewController {
 
     private var session: SessionType? {
         didSet {
+            sessionCancellables.removeAll()
             oldValue?.stopRunning()
             performanceLabel.stringValue = ""
             levelsStackView.values.removeAll()
@@ -163,34 +164,36 @@ class ViewController: NSViewController {
             if let session = session {
                 session.performancePublisher.removeDuplicates().receive(on: RunLoop.main)
                     .assign(to: \.stringValue, on: performanceLabel)
-                    .store(in: &cancellables)
+                    .store(in: &sessionCancellables)
 
                 session.levelsPublisher.removeDuplicates().receive(on: DispatchQueue.main)
                     .map {$0.enumerated().map {(String($0.offset + 1), $0.element)}}
                     .assign(to: \.values, on: levelsStackView)
-                    .store(in: &cancellables)
+                    .store(in: &sessionCancellables)
 
                 session.dftValues.receive(on: DispatchQueue.main)
                     .assign(to: \.value, on: fftView)
-                    .store(in: &cancellables)
+                    .store(in: &sessionCancellables)
                 
                 $selectedIndexOfFFTBufferLengthPopup
+                    .prepend(0)
                     .map {[unowned self] _ in fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024}
                     .assign(to: \.sampleBufferForDFTLength, on: session)
-                    .store(in: &cancellables)
-                session.sampleBufferForDFTLength = fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024
+                    .store(in: &sessionCancellables)
 
                 if let monitorSession = session as? MonitorSessionType {
-                    monitorSession.previewVolume.value = monitorVolumeSliderValue
-                    $monitorVolumeSliderValue.removeDuplicates()
+                    $monitorVolumeSliderValue
+                        .prepend(monitorVolumeSliderValue)
+                        .removeDuplicates()
                         .subscribe(monitorSession.previewVolume)
-                        .store(in: &cancellables)
+                        .store(in: &sessionCancellables)
                 }
 
                 session.startRunning()
             }
         }
     }
+    private var sessionCancellables: Set<AnyCancellable> = []
 
     private var cancellables: Set<AnyCancellable> = []
 
@@ -302,12 +305,6 @@ class ViewController: NSViewController {
         estimateMusicalKeysCheckbox.publisherForStateOnOff()
             .assign(to: \.estimateMusicalKeys, on: fftView)
             .store(in: &cancellables)
-
-        if #available(macOS 12.3, *) {
-            AudioApp.shared.$apps.sink { apps in
-                NSLog("%@", "apps = \(apps)")
-            }.store(in: &cancellables)
-        }
     }
 
     override func viewWillAppear() {
