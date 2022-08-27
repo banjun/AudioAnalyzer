@@ -4,6 +4,7 @@ import ScreenCaptureKit
 
 enum Source: Equatable {
     case device(AVCaptureDevice)
+    @available(macOS 13.0, *)
     case system
     case app(AudioApp.App)
 }

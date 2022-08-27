@@ -24,8 +24,10 @@ class ViewController: NSViewController {
                 case .device(let device):
                     session = try? AVKitCaptureSession(device: device)
                 case .system:
+                    guard #available(macOS 13.0, *) else { break }
                     session = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: nil, display: $0)}
                 case .app(let app):
+                    guard #available(macOS 13.0, *) else { break }
                     session = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: app.scRunningApplication, display: $0)}
                 }
             case .separator:
@@ -243,7 +245,10 @@ class ViewController: NSViewController {
             .sink { [unowned self] devices, apps in
                 self.sources = [
                     devices.map {.device($0)},
-                    apps.isEmpty ? [] : [.system],
+                    apps.isEmpty ? [] : {
+                        guard #available(macOS 13.0, *) else { return [] }
+                        return [.system]
+                    }(),
                     apps.map {.app($0)}
                 ].flatMap {$0}
             }.store(in: &cancellables)

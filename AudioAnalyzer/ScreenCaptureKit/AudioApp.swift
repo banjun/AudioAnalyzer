@@ -1,7 +1,6 @@
 import Foundation
 import ScreenCaptureKit
 
-@available(macOS 12.3, *)
 final class AudioApp {
     static let shared: AudioApp = .init()
     @Published private(set) var apps: [App] = []

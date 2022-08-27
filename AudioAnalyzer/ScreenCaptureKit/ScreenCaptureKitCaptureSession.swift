@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import ScreenCaptureKit
 
+@available(macOS 13.0, *)
 final class ScreenCaptureKitCaptureSession: NSObject, SCStreamOutput, SessionType {
     private let stream: SCStream
 
