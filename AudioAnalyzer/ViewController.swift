@@ -295,7 +295,9 @@ class ViewController: NSViewController {
 
     override func viewWillAppear() {
         super.viewWillAppear()
-        AudioApp.shared.reloadApps()
+        if #available(macOS 13, *) {
+            AudioApp.shared.reloadApps()
+        }
     }
 }
 

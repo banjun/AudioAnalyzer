@@ -17,9 +17,12 @@ final class AudioApp {
     }
 
     private init() {
-        reloadApps()
+        if #available(macOS 13, *) {
+            reloadApps()
+        }
     }
 
+    @available(macOS 13, *)
     func reloadApps() {
         SCShareableContent.getExcludingDesktopWindows(true, onScreenWindowsOnly: false) { [weak self] content, error in
             let nsRunningApplications = NSWorkspace.shared.runningApplications
