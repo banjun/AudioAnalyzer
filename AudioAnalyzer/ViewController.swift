@@ -26,7 +26,7 @@ class ViewController: NSViewController {
                 case .system:
                     session = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: nil, display: $0)}
                 case .app(let app):
-                    session = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: app, display: $0)}
+                    session = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: app.scRunningApplication, display: $0)}
                 }
             case .separator:
                 break
@@ -42,27 +42,6 @@ class ViewController: NSViewController {
                     ss.append(.separator)
                 }
                 ss.append(.source(s))
-            }
-        }
-    }
-    enum Source: Equatable {
-        case device(AVCaptureDevice)
-        case system
-        case app(SCRunningApplication)
-
-        var caseIdentifier: String {
-            switch self {
-            case .device: return "device"
-            case .system: return "system"
-            case .app: return "app"
-            }
-        }
-
-        var title: String {
-            switch self {
-            case .device(let device): return device.localizedName
-            case .system: return "System Audio"
-            case .app(let app): return app.applicationName + " (\(app.processID))"
             }
         }
     }
@@ -82,7 +61,7 @@ class ViewController: NSViewController {
                 case .none:
                     audioInputPopup.menu?.addItem(NSMenuItem(title: "", action: nil, keyEquivalent: ""))
                 case .source(let source):
-                    audioInputPopup.menu?.addItem(NSMenuItem(title: source.title, action: nil, keyEquivalent: ""))
+                    audioInputPopup.menu?.addItem(NSMenuItem(title: source.title, action: nil, keyEquivalent: "") ※ {$0.image = source.icon})
                 case .separator:
                     audioInputPopup.menu?.addItem(NSMenuItem.separator())
                 }
@@ -216,7 +195,9 @@ class ViewController: NSViewController {
         }
 
         let autolayout = view.northLayoutFormat(["p": 20], [
-            "inputs": audioInputPopup,
+            "inputs": audioInputPopup ※ {
+                $0.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            },
             "phones": discoversPhonesCheckbox,
             "performance": performanceLabel ※ {
                 $0.setContentCompressionResistancePriority(.init(9), for: .horizontal)
@@ -235,7 +216,7 @@ class ViewController: NSViewController {
             "lowerPopup": lowerFrequencyPopup,
             "keys": estimateMusicalKeysCheckbox,
         ])
-        autolayout("H:|-p-[inputs]-p-[phones]-(>=p)-|")
+        autolayout("H:|-p-[inputs(>=128)]-p-[phones]-(>=p)-|")
         autolayout("H:|-p-[performance]-p-|")
         autolayout("H:|-p-[monitorCheckbox]-p-[monitorVolume]-p-|")
         autolayout("H:|-p-[levels]-p-|")

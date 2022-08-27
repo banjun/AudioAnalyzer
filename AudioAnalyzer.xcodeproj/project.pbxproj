@@ -22,6 +22,7 @@
 		EAA467C92869FB980037686B /* ScreenCaptureKitCaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA467C82869FB980037686B /* ScreenCaptureKitCaptureSession.swift */; };
 		EAA467CB287027680037686B /* SessionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA467CA287027680037686B /* SessionType.swift */; };
 		EAB17CA42867583B00D8D900 /* AudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB17CA32867583B00D8D900 /* AudioApp.swift */; };
+		EAD2817D28B9F03B00E623FD /* Source.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAD2817C28B9F03B00E623FD /* Source.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +46,7 @@
 		EAA467C82869FB980037686B /* ScreenCaptureKitCaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureKitCaptureSession.swift; sourceTree = "<group>"; };
 		EAA467CA287027680037686B /* SessionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionType.swift; sourceTree = "<group>"; };
 		EAB17CA32867583B00D8D900 /* AudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioApp.swift; sourceTree = "<group>"; };
+		EAD2817C28B9F03B00E623FD /* Source.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Source.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +101,7 @@
 			children = (
 				EA371BFA25B08EFA001476F9 /* AppDelegate.swift */,
 				EA371BFC25B08EFA001476F9 /* ViewController.swift */,
+				EAD2817C28B9F03B00E623FD /* Source.swift */,
 				EAA467CA287027680037686B /* SessionType.swift */,
 				EAB18FFD2873353200D34051 /* AVKit */,
 				EAB18FFE2873353900D34051 /* ScreenCaptureKit */,
@@ -244,6 +247,7 @@
 				EAB17CA42867583B00D8D900 /* AudioApp.swift in Sources */,
 				EAA467CB287027680037686B /* SessionType.swift in Sources */,
 				EA371C1925B097C7001476F9 /* AVKitCaptureSession.swift in Sources */,
+				EAD2817D28B9F03B00E623FD /* Source.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
