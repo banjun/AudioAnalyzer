@@ -83,8 +83,8 @@ final class DCT {
                 // execute DCT
                 result = .init(powers: buffers.map { buffer in
                     var output = buffer
-                    vDSP.multiply(buffer, hanningWindow, result: &output)
-                    dct.transform(buffer, result: &output)
+                    vDSP.multiply(output, hanningWindow, result: &output)
+                    dct.transform(output, result: &output)
                     vDSP.absolute(output, result: &output)
 //                    vDSP.convert(amplitude: output, toDecibels: &output, zeroReference: Float(bufferLength))
 //                    vDSP.add(240, output, result: &output)
