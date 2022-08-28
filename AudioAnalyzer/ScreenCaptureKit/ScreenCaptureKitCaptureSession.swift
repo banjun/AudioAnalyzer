@@ -13,8 +13,10 @@ final class ScreenCaptureKitCaptureSession: NSObject, SCStreamOutput, SessionTyp
     var levelsPublisher: Published<[Float]>.Publisher { $levels }
 
     private let dft = DFT()
+    private let dct = DCT()
     /// DFT results
     var dftValues: Published<DFT.Result>.Publisher { dft.$result }
+    var dctValues: Published<DCT.Result>.Publisher { dct.$result }
     /// DFT sample length
     var sampleBufferForDFTLength: Int {
         get {dft.bufferLength}
@@ -83,5 +85,6 @@ final class ScreenCaptureKitCaptureSession: NSObject, SCStreamOutput, SessionTyp
 
         sample = (sampleBuffer, Int(channelCount))
         dft.appendAudioSample(sampleBuffer: sampleBuffer, channelCount: Int(channelCount))
+        dct.appendAudioSample(sampleBuffer: sampleBuffer, channelCount: Int(channelCount))
     }
 }

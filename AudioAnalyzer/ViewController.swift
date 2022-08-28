@@ -152,7 +152,8 @@ class ViewController: NSViewController {
                     .assign(to: \.values, on: levelsStackView)
                     .store(in: &sessionCancellables)
 
-                session.dftValues.receive(on: DispatchQueue.main)
+                session.dctValues.receive(on: DispatchQueue.main)
+                    .map {DFT.Result(powers: $0.powers, sampleRate: $0.sampleRate)}
                     .assign(to: \.value, on: fftView)
                     .store(in: &sessionCancellables)
                 

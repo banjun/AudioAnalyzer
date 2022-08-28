@@ -37,12 +37,16 @@ final class AVKitCaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferD
     }
 
     private let dft = DFT()
+    private let dct = DCT()
     /// DFT results
     var dftValues: Published<DFT.Result>.Publisher { dft.$result }
+    var dctValues: Published<DCT.Result>.Publisher { dct.$result }
     /// DFT sample length
     var sampleBufferForDFTLength: Int {
         get {dft.bufferLength}
-        set {dft.bufferLength = newValue}
+        set {dft.bufferLength = newValue
+            dct.bufferLength = newValue
+        }
     }
 
     init(device: AVCaptureDevice) throws {
@@ -84,5 +88,6 @@ final class AVKitCaptureSession: NSObject, AVCaptureAudioDataOutputSampleBufferD
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         sample = (sampleBuffer, connection)
         dft.appendAudioSample(sampleBuffer: sampleBuffer, channelCount: connection.audioChannels.count)
+        dct.appendAudioSample(sampleBuffer: sampleBuffer, channelCount: connection.audioChannels.count)
     }
 }
