@@ -18,7 +18,7 @@ final class AudioDevice {
             var prop = CMIOObjectPropertyAddress(
                 mSelector: CMIOObjectPropertySelector(kCMIOHardwarePropertyAllowScreenCaptureDevices),
                 mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
-                mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMaster))
+                mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain))
             var allow: UInt32 = discoversPhones ? 1 : 0;
             CMIOObjectSetPropertyData(CMIOObjectID(kCMIOObjectSystemObject), &prop,
                                       0, nil,

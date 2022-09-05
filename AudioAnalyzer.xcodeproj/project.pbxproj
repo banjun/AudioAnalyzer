@@ -23,6 +23,8 @@
 		EAA467CB287027680037686B /* SessionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA467CA287027680037686B /* SessionType.swift */; };
 		EAB17CA42867583B00D8D900 /* AudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB17CA32867583B00D8D900 /* AudioApp.swift */; };
 		EAD2817D28B9F03B00E623FD /* Source.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAD2817C28B9F03B00E623FD /* Source.swift */; };
+		EAD36AF828C610F700CD8A91 /* DCT.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAD36AF728C610F700CD8A91 /* DCT.swift */; };
+		EAD36AFA28C610FC00CD8A91 /* SampleAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAD36AF928C610FC00CD8A91 /* SampleAnalysis.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +49,8 @@
 		EAA467CA287027680037686B /* SessionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionType.swift; sourceTree = "<group>"; };
 		EAB17CA32867583B00D8D900 /* AudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioApp.swift; sourceTree = "<group>"; };
 		EAD2817C28B9F03B00E623FD /* Source.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Source.swift; sourceTree = "<group>"; };
+		EAD36AF728C610F700CD8A91 /* DCT.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DCT.swift; sourceTree = "<group>"; };
+		EAD36AF928C610FC00CD8A91 /* SampleAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleAnalysis.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -105,7 +109,7 @@
 				EAA467CA287027680037686B /* SessionType.swift */,
 				EAB18FFD2873353200D34051 /* AVKit */,
 				EAB18FFE2873353900D34051 /* ScreenCaptureKit */,
-				EA509DF825C6888D00359691 /* DFT.swift */,
+				EAD36AF628C610EE00CD8A91 /* Analysis */,
 				EA134F2225B45F0D0081F834 /* CannelLevelIndicator.swift */,
 				EA3ED0E425B4BB3900092398 /* FFTView.swift */,
 				EA134F1F25B455AE0081F834 /* Combine.swift */,
@@ -134,6 +138,16 @@
 				EAA467C82869FB980037686B /* ScreenCaptureKitCaptureSession.swift */,
 			);
 			path = ScreenCaptureKit;
+			sourceTree = "<group>";
+		};
+		EAD36AF628C610EE00CD8A91 /* Analysis */ = {
+			isa = PBXGroup;
+			children = (
+				EAD36AF928C610FC00CD8A91 /* SampleAnalysis.swift */,
+				EA509DF825C6888D00359691 /* DFT.swift */,
+				EAD36AF728C610F700CD8A91 /* DCT.swift */,
+			);
+			path = Analysis;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -240,12 +254,14 @@
 				EA134F2325B45F0D0081F834 /* CannelLevelIndicator.swift in Sources */,
 				EA509DF925C6888D00359691 /* DFT.swift in Sources */,
 				EA509DF125C686B000359691 /* CoreMedia.swift in Sources */,
+				EAD36AF828C610F700CD8A91 /* DCT.swift in Sources */,
 				EA371BFB25B08EFA001476F9 /* AppDelegate.swift in Sources */,
 				EAA467C92869FB980037686B /* ScreenCaptureKitCaptureSession.swift in Sources */,
 				EA371C0C25B08F45001476F9 /* AudioDevice.swift in Sources */,
 				EA134F2025B455AE0081F834 /* Combine.swift in Sources */,
 				EAB17CA42867583B00D8D900 /* AudioApp.swift in Sources */,
 				EAA467CB287027680037686B /* SessionType.swift in Sources */,
+				EAD36AFA28C610FC00CD8A91 /* SampleAnalysis.swift in Sources */,
 				EA371C1925B097C7001476F9 /* AVKitCaptureSession.swift in Sources */,
 				EAD2817D28B9F03B00E623FD /* Source.swift in Sources */,
 			);

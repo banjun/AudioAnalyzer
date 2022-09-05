@@ -10,7 +10,7 @@ private func keyScale(_ hz: Float) -> Float {
 }
 
 final class FFTView: NSView {
-    var value: DFT.Result = .init(powers: [], sampleRate: 44100) {
+    var value: SampleAnalysis.Result = .init(powers: [], sampleRate: 44100) {
         didSet {
             let minHz: Float = lowerFrequency
             let maxHz = min(value.sampleRate / 2, upperFrequency)

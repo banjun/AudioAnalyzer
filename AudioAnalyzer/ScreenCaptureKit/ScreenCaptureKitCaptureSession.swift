@@ -12,15 +12,23 @@ final class ScreenCaptureKitCaptureSession: NSObject, SCStreamOutput, SessionTyp
     var performancePublisher: Published<String>.Publisher { $performance }
     var levelsPublisher: Published<[Float]>.Publisher { $levels }
 
-    private let dft = DFT()
-    private let dct = DCT()
-    /// DFT results
-    var dftValues: Published<DFT.Result>.Publisher { dft.$result }
-    var dctValues: Published<DCT.Result>.Publisher { dct.$result }
-    /// DFT sample length
-    var sampleBufferForDFTLength: Int {
-        get {dft.bufferLength}
-        set {dft.bufferLength = newValue}
+    private var analysisCancellables: Set<AnyCancellable> = []
+    var analysis: SampleAnalysisAlgorithm? = nil {
+        didSet {
+            analysisCancellables.removeAll()
+            analysis?.resultPublisher.sink { [weak self] in
+                self?.analysisResultsSubject.send($0)
+            }.store(in: &analysisCancellables)
+        }
+    }
+    private let analysisResultsSubject = PassthroughSubject<SampleAnalysis.Result, Never>()
+    /// analysis results
+    var analysisValues: any Publisher<SampleAnalysis.Result, Never> { analysisResultsSubject }
+    /// analysis sample length
+    var sampleBufferForDFTLength: Int = 1024 {
+        didSet {
+            analysis?.analysis.bufferLength = sampleBufferForDFTLength
+        }
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -84,7 +92,6 @@ final class ScreenCaptureKitCaptureSession: NSObject, SCStreamOutput, SessionTyp
         guard let channelCount = sampleBuffer.formatDescription?.audioFormatList.first?.mASBD.mChannelsPerFrame else { return }
 
         sample = (sampleBuffer, Int(channelCount))
-        dft.appendAudioSample(sampleBuffer: sampleBuffer, channelCount: Int(channelCount))
-        dct.appendAudioSample(sampleBuffer: sampleBuffer, channelCount: Int(channelCount))
+        analysis?.appendAudioSample(sampleBuffer: sampleBuffer, channelCount: .init(channelCount))
     }
 }

@@ -97,22 +97,24 @@ class ViewController: NSViewController {
     @Published @objc private var monitorVolumeSliderValue: Float = 0.5
 
     private let levelsStackView = ChannelLevelStackView()
-    private let fftView = FFTView()
-    private lazy var fftBufferLengthPopup: NSPopUpButton = .init() ※ {
-        $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfFFTBufferLengthPopup), options: nil)
+    private let analysisView = FFTView()
+    private let analysisAlgorithmAndSampleBufferLengths: [(String, Int)] = [256, 512, 1024, 2048, 4096, 8192, 16384].flatMap {[("DCT", $0), ("DFT", $0)]}
+    private lazy var analysisPopup: NSPopUpButton = .init() ※ {
+        $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfAnalysisPopup), options: nil)
         $0.removeAllItems()
         $0.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
-        $0.addItems(withTitles: [256, 512, 1024, 2048, 4096, 8192, 16384].map {String($0)})
-        $0.selectItem(at: 2)
+        $0.addItems(withTitles: analysisAlgorithmAndSampleBufferLengths.map {[$0.0, String($0.1)].joined(separator: " ")})
+        $0.selectItem(at: 8)
+        selectedIndexOfAnalysisPopup = 8
     }
-    @Published @objc private var selectedIndexOfFFTBufferLengthPopup: Int = 0
-    private lazy var fftFrequencyAxisModePopup: NSPopUpButton = .init() ※ {
-        $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfFFTFrequencyAxisModePopup), options: nil)
+    @Published @objc private var selectedIndexOfAnalysisPopup: Int = 0
+    private lazy var analysisFrequencyAxisModePopup: NSPopUpButton = .init() ※ {
+        $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfAnalysisFrequencyAxisModePopup), options: nil)
         $0.removeAllItems()
         $0.addItems(withTitles: ["Linear", "MelScale", "Keyboard"])
         $0.selectItem(at: 1)
     }
-    @Published @objc private var selectedIndexOfFFTFrequencyAxisModePopup: Int = 1
+    @Published @objc private var selectedIndexOfAnalysisFrequencyAxisModePopup: Int = 1
 
     private lazy var upperFrequencyPopup: NSPopUpButton = .init() ※ {
         $0.bind(.selectedIndex, to: self, withKeyPath: #keyPath(selectedIndexOfUpperFrequencyPopup), options: nil)
@@ -152,14 +154,25 @@ class ViewController: NSViewController {
                     .assign(to: \.values, on: levelsStackView)
                     .store(in: &sessionCancellables)
 
-                session.dctValues.receive(on: DispatchQueue.main)
-                    .map {DFT.Result(powers: $0.powers, sampleRate: $0.sampleRate)}
-                    .assign(to: \.value, on: fftView)
+                session.analysisValues.eraseToAnyPublisher().receive(on: DispatchQueue.main)
+                    .assign(to: \.value, on: analysisView)
+                    .store(in: &sessionCancellables)
+
+                $selectedIndexOfAnalysisPopup
+                    .map {[unowned self] in analysisAlgorithmAndSampleBufferLengths[$0].0}
+                    .removeDuplicates()
+                    .compactMap {
+                        switch $0 {
+                        case "DCT": return DCT()
+                        case "DFT": return DFT()
+                        default: return nil
+                        }
+                    }
+                    .sink {session.analysis = $0}
                     .store(in: &sessionCancellables)
                 
-                $selectedIndexOfFFTBufferLengthPopup
-                    .prepend(0)
-                    .map {[unowned self] _ in fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024}
+                $selectedIndexOfAnalysisPopup
+                    .map {[unowned self] in analysisAlgorithmAndSampleBufferLengths[$0].1}
                     .assign(to: \.sampleBufferForDFTLength, on: session)
                     .store(in: &sessionCancellables)
 
@@ -187,7 +200,7 @@ class ViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let fftBufferLengthLabel = NSTextField(labelWithString: "FFT Buffer") ※ {
+        let analysisLabel = NSTextField(labelWithString: "Analysis") ※ {
             $0.textColor = .tertiaryLabelColor
         }
         let upperLabel = NSTextField(labelWithString: "Upper") ※ {
@@ -209,10 +222,10 @@ class ViewController: NSViewController {
             "monitorCheckbox": monitorCheckbox,
             "monitorVolume": monitorVolumeSlider,
             "levels": levelsStackView,
-            "fft": fftView,
-            "fftBufferLengthLabel": fftBufferLengthLabel,
-            "fftBufferLengthPopup": fftBufferLengthPopup,
-            "fftFrequencyAxisModePopup": fftFrequencyAxisModePopup,
+            "analysis": analysisView,
+            "analysisLabel": analysisLabel,
+            "analysisPopup": analysisPopup,
+            "analysisFrequencyAxisModePopup": analysisFrequencyAxisModePopup,
             "upperLabel": upperLabel,
             "upperPopup": upperFrequencyPopup,
             "lowerLabel": lowerLabel,
@@ -223,22 +236,22 @@ class ViewController: NSViewController {
         autolayout("H:|-p-[performance]-p-|")
         autolayout("H:|-p-[monitorCheckbox]-p-[monitorVolume]-p-|")
         autolayout("H:|-p-[levels]-p-|")
-        autolayout("H:|-p-[fft]-p-|")
-        autolayout("H:|-(>=p)-[fftBufferLengthLabel]-[fftBufferLengthPopup]-p-|")
-        autolayout("H:|-(>=p)-[fftFrequencyAxisModePopup]-p-|")
+        autolayout("H:|-p-[analysis]-p-|")
+        autolayout("H:|-(>=p)-[analysisLabel]-[analysisPopup]-p-|")
+        autolayout("H:|-(>=p)-[analysisFrequencyAxisModePopup]-p-|")
         autolayout("H:|-(>=p)-[upperLabel]-[upperPopup]-p-|")
         autolayout("H:|-(>=p)-[lowerLabel]-[lowerPopup]-p-|")
         autolayout("H:|-(>=p)-[keys]-p-|")
-        autolayout("H:|-(>=p)-[fftFrequencyAxisModePopup]-p-|")
+        autolayout("H:|-(>=p)-[analysisFrequencyAxisModePopup]-p-|")
         autolayout("V:|-p-[inputs]-p-[performance]-p-[monitorCheckbox]-p-[levels]")
         autolayout("V:|-p-[phones(inputs)]-p-[performance]-p-[monitorVolume]-p-[levels]")
-        autolayout("V:[levels]-p-[fft(>=128)]-p-|")
-        autolayout("V:[levels]-p-[fftBufferLengthPopup]-[fftFrequencyAxisModePopup]-[upperPopup]-[lowerPopup]-[keys]-(>=96)-|")
-        fftBufferLengthLabel.centerYAnchor.constraint(equalTo: fftBufferLengthPopup.centerYAnchor).isActive = true
+        autolayout("V:[levels]-p-[analysis(>=128)]-p-|")
+        autolayout("V:[levels]-p-[analysisPopup]-[analysisFrequencyAxisModePopup]-[upperPopup]-[lowerPopup]-[keys]-(>=96)-|")
+        analysisLabel.centerYAnchor.constraint(equalTo: analysisPopup.centerYAnchor).isActive = true
         upperLabel.centerYAnchor.constraint(equalTo: upperFrequencyPopup.centerYAnchor).isActive = true
         lowerLabel.centerYAnchor.constraint(equalTo: lowerFrequencyPopup.centerYAnchor).isActive = true
-        [fftBufferLengthLabel, fftBufferLengthPopup, upperLabel, upperFrequencyPopup, lowerLabel, lowerFrequencyPopup, estimateMusicalKeysCheckbox].forEach {
-            view.addSubview($0, positioned: .above, relativeTo: fftView)
+        [analysisLabel, analysisPopup, upperLabel, upperFrequencyPopup, lowerLabel, lowerFrequencyPopup, estimateMusicalKeysCheckbox].forEach {
+            view.addSubview($0, positioned: .above, relativeTo: analysisView)
         }
 
         Publishers.CombineLatest(AudioDevice.shared.$inputDevices, AudioApp.shared.$apps)
@@ -266,31 +279,31 @@ class ViewController: NSViewController {
             .sink { [unowned self] in (session as? MonitorSessionType)?.enablesMonitor = $0 }
             .store(in: &cancellables)
 
-        $selectedIndexOfFFTFrequencyAxisModePopup
+        $selectedIndexOfAnalysisFrequencyAxisModePopup
             .compactMap {[unowned self] _ -> FFTView.FrequencyAxisMode? in
-                switch fftFrequencyAxisModePopup.titleOfSelectedItem {
+                switch analysisFrequencyAxisModePopup.titleOfSelectedItem {
                 case "Linear": return .linear
                 case "MelScale": return .melScale
                 case "Keyboard": return .keyScale
                 default: return nil
                 }
-            }.assign(to: \.frequencyAxisMode, on: fftView)
+            }.assign(to: \.frequencyAxisMode, on: analysisView)
             .store(in: &cancellables)
 
         $selectedIndexOfUpperFrequencyPopup
             .compactMap {[unowned self] _ in Float(upperFrequencyPopup.titleOfSelectedItem ?? "")}
             .filter {$0 >= 20}
-            .assign(to: \.upperFrequency, on: fftView)
+            .assign(to: \.upperFrequency, on: analysisView)
             .store(in: &cancellables)
 
         $selectedIndexOfLowerFrequencyPopup
             .compactMap {[unowned self] _ in Float(lowerFrequencyPopup.titleOfSelectedItem ?? "")}
             .filter {$0 >= 20}
-            .assign(to: \.lowerFrequency, on: fftView)
+            .assign(to: \.lowerFrequency, on: analysisView)
             .store(in: &cancellables)
 
         estimateMusicalKeysCheckbox.publisherForStateOnOff()
-            .assign(to: \.estimateMusicalKeys, on: fftView)
+            .assign(to: \.estimateMusicalKeys, on: analysisView)
             .store(in: &cancellables)
     }
 
