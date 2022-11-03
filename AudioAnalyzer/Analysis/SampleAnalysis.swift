@@ -12,7 +12,7 @@ struct SampleAnalysis {
     var bufferLength = 1024
     var buffers: [[Float32]] = []
 
-    struct Result {
+    struct Result: Codable {
         /// power bins by channels
         var powers: [[Float32]]
         var sampleRate: Float32
