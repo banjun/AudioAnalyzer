@@ -15,10 +15,14 @@
 		EA371BFF25B08EFC001476F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EA371BFE25B08EFC001476F9 /* Assets.xcassets */; };
 		EA371C0225B08EFC001476F9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EA371C0025B08EFC001476F9 /* Main.storyboard */; };
 		EA371C0C25B08F45001476F9 /* AudioDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371C0B25B08F45001476F9 /* AudioDevice.swift */; };
-		EA371C1925B097C7001476F9 /* CaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371C1825B097C7001476F9 /* CaptureSession.swift */; };
+		EA371C1925B097C7001476F9 /* AVKitCaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA371C1825B097C7001476F9 /* AVKitCaptureSession.swift */; };
 		EA3ED0E525B4BB3900092398 /* FFTView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA3ED0E425B4BB3900092398 /* FFTView.swift */; };
 		EA509DF125C686B000359691 /* CoreMedia.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA509DF025C686B000359691 /* CoreMedia.swift */; };
 		EA509DF925C6888D00359691 /* DFT.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA509DF825C6888D00359691 /* DFT.swift */; };
+		EAA467C92869FB980037686B /* ScreenCaptureKitCaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA467C82869FB980037686B /* ScreenCaptureKitCaptureSession.swift */; };
+		EAA467CB287027680037686B /* SessionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA467CA287027680037686B /* SessionType.swift */; };
+		EAB17CA42867583B00D8D900 /* AudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB17CA32867583B00D8D900 /* AudioApp.swift */; };
+		EAD2817D28B9F03B00E623FD /* Source.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAD2817C28B9F03B00E623FD /* Source.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,10 +39,14 @@
 		EA371C0325B08EFC001476F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EA371C0425B08EFC001476F9 /* AudioAnalyzer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AudioAnalyzer.entitlements; sourceTree = "<group>"; };
 		EA371C0B25B08F45001476F9 /* AudioDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDevice.swift; sourceTree = "<group>"; };
-		EA371C1825B097C7001476F9 /* CaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSession.swift; sourceTree = "<group>"; };
+		EA371C1825B097C7001476F9 /* AVKitCaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVKitCaptureSession.swift; sourceTree = "<group>"; };
 		EA3ED0E425B4BB3900092398 /* FFTView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFTView.swift; sourceTree = "<group>"; };
 		EA509DF025C686B000359691 /* CoreMedia.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMedia.swift; sourceTree = "<group>"; };
 		EA509DF825C6888D00359691 /* DFT.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DFT.swift; sourceTree = "<group>"; };
+		EAA467C82869FB980037686B /* ScreenCaptureKitCaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureKitCaptureSession.swift; sourceTree = "<group>"; };
+		EAA467CA287027680037686B /* SessionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionType.swift; sourceTree = "<group>"; };
+		EAB17CA32867583B00D8D900 /* AudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioApp.swift; sourceTree = "<group>"; };
+		EAD2817C28B9F03B00E623FD /* Source.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Source.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -93,8 +101,10 @@
 			children = (
 				EA371BFA25B08EFA001476F9 /* AppDelegate.swift */,
 				EA371BFC25B08EFA001476F9 /* ViewController.swift */,
-				EA371C0B25B08F45001476F9 /* AudioDevice.swift */,
-				EA371C1825B097C7001476F9 /* CaptureSession.swift */,
+				EAD2817C28B9F03B00E623FD /* Source.swift */,
+				EAA467CA287027680037686B /* SessionType.swift */,
+				EAB18FFD2873353200D34051 /* AVKit */,
+				EAB18FFE2873353900D34051 /* ScreenCaptureKit */,
 				EA509DF825C6888D00359691 /* DFT.swift */,
 				EA134F2225B45F0D0081F834 /* CannelLevelIndicator.swift */,
 				EA3ED0E425B4BB3900092398 /* FFTView.swift */,
@@ -106,6 +116,24 @@
 				EA371C0425B08EFC001476F9 /* AudioAnalyzer.entitlements */,
 			);
 			path = AudioAnalyzer;
+			sourceTree = "<group>";
+		};
+		EAB18FFD2873353200D34051 /* AVKit */ = {
+			isa = PBXGroup;
+			children = (
+				EA371C0B25B08F45001476F9 /* AudioDevice.swift */,
+				EA371C1825B097C7001476F9 /* AVKitCaptureSession.swift */,
+			);
+			path = AVKit;
+			sourceTree = "<group>";
+		};
+		EAB18FFE2873353900D34051 /* ScreenCaptureKit */ = {
+			isa = PBXGroup;
+			children = (
+				EAB17CA32867583B00D8D900 /* AudioApp.swift */,
+				EAA467C82869FB980037686B /* ScreenCaptureKitCaptureSession.swift */,
+			);
+			path = ScreenCaptureKit;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -213,9 +241,13 @@
 				EA509DF925C6888D00359691 /* DFT.swift in Sources */,
 				EA509DF125C686B000359691 /* CoreMedia.swift in Sources */,
 				EA371BFB25B08EFA001476F9 /* AppDelegate.swift in Sources */,
+				EAA467C92869FB980037686B /* ScreenCaptureKitCaptureSession.swift in Sources */,
 				EA371C0C25B08F45001476F9 /* AudioDevice.swift in Sources */,
 				EA134F2025B455AE0081F834 /* Combine.swift in Sources */,
-				EA371C1925B097C7001476F9 /* CaptureSession.swift in Sources */,
+				EAB17CA42867583B00D8D900 /* AudioApp.swift in Sources */,
+				EAA467CB287027680037686B /* SessionType.swift in Sources */,
+				EA371C1925B097C7001476F9 /* AVKitCaptureSession.swift in Sources */,
+				EAD2817D28B9F03B00E623FD /* Source.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -284,7 +316,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -339,7 +371,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;

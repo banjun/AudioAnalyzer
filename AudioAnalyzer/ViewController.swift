@@ -2,6 +2,8 @@ import Cocoa
 import NorthLayout
 import Ikemen
 import Combine
+import AVKit
+import ScreenCaptureKit
 
 class ViewController: NSViewController {
     deinit {NSLog("%@", "deinit \(self.debugDescription)")}
@@ -11,12 +13,67 @@ class ViewController: NSViewController {
     }
     @Published @objc private var selectedIndexOfAudioInputPopup: Int = -1 {
         didSet {
-            let devices = AudioDevice.shared.inputDevices
-            guard case 0..<devices.count = selectedIndexOfAudioInputPopup else { return }
-            let device = devices[selectedIndexOfAudioInputPopup]
-            title = device.localizedName
-            self.session = try? CaptureSession(device: device)
+            guard 0..<sourcePopupItems.count ~= selectedIndexOfAudioInputPopup else { return }
+            switch sourcePopupItems[selectedIndexOfAudioInputPopup] {
+            case .none:
+                title = nil
+                session = nil
+            case .source(let source):
+                title = source.title
+                switch source {
+                case .device(let device):
+                    session = try? AVKitCaptureSession(device: device)
+                case .system:
+                    guard #available(macOS 13.0, *) else { break }
+                    session = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: nil, display: $0)}
+                case .app(let app):
+                    guard #available(macOS 13.0, *) else { break }
+                    session = AudioApp.shared.display.map {ScreenCaptureKitCaptureSession(app: app.scRunningApplication, display: $0)}
+                }
+            case .separator:
+                break
+            }
         }
+    }
+
+    @Published private var sources: [Source] = [] {
+        didSet {
+            sourcePopupItems = sources.reduce(into: [.none]) { ss, s in
+                if case .source(let last) = ss.last, last.caseIdentifier != s.caseIdentifier {
+                    // insert separator between different groups
+                    ss.append(.separator)
+                }
+                ss.append(.source(s))
+            }
+        }
+    }
+    @Published private var sourcePopupItems: [PopupItem] = [] {
+        didSet {
+            // preserve selection
+            let title = audioInputPopup.titleOfSelectedItem
+            defer {
+                if let title = title {
+                    audioInputPopup.selectItem(withTitle: title)
+                }
+            }
+
+            audioInputPopup.menu?.removeAllItems()
+            sourcePopupItems.forEach {
+                switch $0 {
+                case .none:
+                    audioInputPopup.menu?.addItem(NSMenuItem(title: "", action: nil, keyEquivalent: ""))
+                case .source(let source):
+                    audioInputPopup.menu?.addItem(NSMenuItem(title: source.title, action: nil, keyEquivalent: "") ※ {$0.image = source.icon})
+                case .separator:
+                    audioInputPopup.menu?.addItem(NSMenuItem.separator())
+                }
+            }
+        }
+    }
+    enum PopupItem {
+        case none
+        case source(Source)
+        case separator
     }
 
     private let discoversPhonesCheckbox = NSButton(checkboxWithTitle: "Includes Mobiles", target: nil, action: nil)
@@ -76,8 +133,9 @@ class ViewController: NSViewController {
 
     private let estimateMusicalKeysCheckbox = NSButton(checkboxWithTitle: "Keys", target: nil, action: nil)
 
-    private var session: CaptureSession? {
+    private var session: SessionType? {
         didSet {
+            sessionCancellables.removeAll()
             oldValue?.stopRunning()
             performanceLabel.stringValue = ""
             levelsStackView.values.removeAll()
@@ -85,34 +143,38 @@ class ViewController: NSViewController {
             monitorVolumeSlider.isHidden = true
 
             if let session = session {
-                session.$performance.removeDuplicates().receive(on: RunLoop.main)
+                session.performancePublisher.removeDuplicates().receive(on: RunLoop.main)
                     .assign(to: \.stringValue, on: performanceLabel)
-                    .store(in: &cancellables)
+                    .store(in: &sessionCancellables)
 
-                session.$levels.removeDuplicates().receive(on: DispatchQueue.main)
+                session.levelsPublisher.removeDuplicates().receive(on: DispatchQueue.main)
                     .map {$0.enumerated().map {(String($0.offset + 1), $0.element)}}
                     .assign(to: \.values, on: levelsStackView)
-                    .store(in: &cancellables)
+                    .store(in: &sessionCancellables)
 
                 session.dftValues.receive(on: DispatchQueue.main)
                     .assign(to: \.value, on: fftView)
-                    .store(in: &cancellables)
-
+                    .store(in: &sessionCancellables)
+                
                 $selectedIndexOfFFTBufferLengthPopup
+                    .prepend(0)
                     .map {[unowned self] _ in fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024}
                     .assign(to: \.sampleBufferForDFTLength, on: session)
-                    .store(in: &cancellables)
-                session.sampleBufferForDFTLength = fftBufferLengthPopup.titleOfSelectedItem.flatMap {Int($0)} ?? 1024
+                    .store(in: &sessionCancellables)
 
-                session.previewVolume.value = monitorVolumeSliderValue
-                $monitorVolumeSliderValue.removeDuplicates()
-                    .subscribe(session.previewVolume)
-                    .store(in: &cancellables)
+                if let monitorSession = session as? MonitorSessionType {
+                    $monitorVolumeSliderValue
+                        .prepend(monitorVolumeSliderValue)
+                        .removeDuplicates()
+                        .subscribe(monitorSession.previewVolume)
+                        .store(in: &sessionCancellables)
+                }
 
                 session.startRunning()
             }
         }
     }
+    private var sessionCancellables: Set<AnyCancellable> = []
 
     private var cancellables: Set<AnyCancellable> = []
 
@@ -135,7 +197,9 @@ class ViewController: NSViewController {
         }
 
         let autolayout = view.northLayoutFormat(["p": 20], [
-            "inputs": audioInputPopup,
+            "inputs": audioInputPopup ※ {
+                $0.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            },
             "phones": discoversPhonesCheckbox,
             "performance": performanceLabel ※ {
                 $0.setContentCompressionResistancePriority(.init(9), for: .horizontal)
@@ -154,7 +218,7 @@ class ViewController: NSViewController {
             "lowerPopup": lowerFrequencyPopup,
             "keys": estimateMusicalKeysCheckbox,
         ])
-        autolayout("H:|-p-[inputs]-p-[phones]-(>=p)-|")
+        autolayout("H:|-p-[inputs(>=128)]-p-[phones]-(>=p)-|")
         autolayout("H:|-p-[performance]-p-|")
         autolayout("H:|-p-[monitorCheckbox]-p-[monitorVolume]-p-|")
         autolayout("H:|-p-[levels]-p-|")
@@ -176,21 +240,17 @@ class ViewController: NSViewController {
             view.addSubview($0, positioned: .above, relativeTo: fftView)
         }
 
-        AudioDevice.shared.$inputDevices
-            .prepend(AudioDevice.shared.inputDevices)
-            .map {$0.map(\.localizedName)}.sink { [unowned self] names in
-                let title = self.audioInputPopup.titleOfSelectedItem
-                defer {
-                    if let title = title {
-                        self.audioInputPopup.selectItem(withTitle: title)
-                    } else if !names.isEmpty {
-                        self.audioInputPopup.selectItem(at: 0)
-                        self.selectedIndexOfAudioInputPopup = 0
-                    }
-                }
-
-                self.audioInputPopup.removeAllItems()
-                self.audioInputPopup.addItems(withTitles: names)
+        Publishers.CombineLatest(AudioDevice.shared.$inputDevices, AudioApp.shared.$apps)
+            .receive(on: DispatchQueue.main)
+            .sink { [unowned self] devices, apps in
+                self.sources = [
+                    devices.map {.device($0)},
+                    apps.isEmpty ? [] : {
+                        guard #available(macOS 13.0, *) else { return [] }
+                        return [.system]
+                    }(),
+                    apps.map {.app($0)}
+                ].flatMap {$0}
             }.store(in: &cancellables)
 
         AudioDevice.shared.discoversPhones.map {$0 ? NSControl.StateValue.on : .off}
@@ -202,7 +262,7 @@ class ViewController: NSViewController {
             .store(in: &cancellables)
 
         monitorCheckbox.publisherForStateOnOff()
-            .sink { [unowned self] in session?.enablesMonitor = $0 }
+            .sink { [unowned self] in (session as? MonitorSessionType)?.enablesMonitor = $0 }
             .store(in: &cancellables)
 
         $selectedIndexOfFFTFrequencyAxisModePopup
@@ -231,6 +291,13 @@ class ViewController: NSViewController {
         estimateMusicalKeysCheckbox.publisherForStateOnOff()
             .assign(to: \.estimateMusicalKeys, on: fftView)
             .store(in: &cancellables)
+    }
+
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        if #available(macOS 13, *) {
+            AudioApp.shared.reloadApps()
+        }
     }
 }
 
