@@ -51,7 +51,7 @@ final class ScreenCaptureKitCaptureSession: NSObject, SCStreamOutput, SessionTyp
                         defer {
                             // audioBufferList requires free. refs https://daisuke-t-jp.hatenablog.com/entry/2019/10/15/AVCaptureSession
                             // observed as swift_slowAlloc in Malloc 32 Bytes on Instruments
-                            free(audioBufferList.unsafeMutablePointer)
+//                            free(audioBufferList.unsafeMutablePointer)
                         }
                         let samplesCount = current.buffer.numSamples
 
