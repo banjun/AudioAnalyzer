@@ -49,9 +49,13 @@ final class ScreenCaptureKitCaptureSession: NSObject, SCStreamOutput, SessionTyp
                 do {
                     try current.buffer.withAudioBufferList { audioBufferList, blockBuffer in
                         defer {
-                            // audioBufferList requires free. refs https://daisuke-t-jp.hatenablog.com/entry/2019/10/15/AVCaptureSession
-                            // observed as swift_slowAlloc in Malloc 32 Bytes on Instruments
-                            free(audioBufferList.unsafeMutablePointer)
+                            if #available(macOS 13.3, *) {
+                                // macOS 13.3 no longer needs free() workaround
+                            } else {
+                                // audioBufferList requires free. refs https://daisuke-t-jp.hatenablog.com/entry/2019/10/15/AVCaptureSession
+                                // observed as swift_slowAlloc in Malloc 32 Bytes on Instruments
+                                free(audioBufferList.unsafeMutablePointer)
+                            }
                         }
                         let samplesCount = current.buffer.numSamples
 

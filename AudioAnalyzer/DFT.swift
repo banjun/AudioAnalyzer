@@ -33,9 +33,13 @@ final class DFT {
 
             try sampleBuffer.withAudioBufferList { audioBufferList, blockBuffer in
                 defer {
-                    // audioBufferList requires free. refs https://daisuke-t-jp.hatenablog.com/entry/2019/10/15/AVCaptureSession
-                    // observed as swift_slowAlloc in Malloc 32 Bytes on Instruments
-                    free(audioBufferList.unsafeMutablePointer)
+                    if #available(macOS 13.3, *) {
+                        // macOS 13.3 no longer needs free() workaround
+                    } else {
+                        // audioBufferList requires free. refs https://daisuke-t-jp.hatenablog.com/entry/2019/10/15/AVCaptureSession
+                        // observed as swift_slowAlloc in Malloc 32 Bytes on Instruments
+                        free(audioBufferList.unsafeMutablePointer)
+                    }
                 }
                 guard let asbd = sampleBuffer.formatDescription?.audioStreamBasicDescription else { return }
                 let samplesCount = min(Int(sampleBuffer.numSamples), bufferLength)
