@@ -28,6 +28,11 @@ final class FFTView: NSView {
             keysView.isEnabled = estimateMusicalKeys
         }
     }
+    var boostsBaseNoteInKeys: Bool = false {
+        didSet {
+            keysView.boostsBaseNote = boostsBaseNoteInKeys
+        }
+    }
 
     private var melodyBins: [[Float32]] = [] // TODO
 
@@ -78,7 +83,7 @@ final class FFTView: NSView {
         autolayout("H:|[graph]|")
         autolayout("H:|[tick]|")
         autolayout("H:|[keys]|")
-        autolayout("V:|[graph]-2-[tick(16)]-2-[keys(44)]|")
+        autolayout("V:|[graph]-2-[tick(16)]-2-[keys(64)]|")
     }
     required init?(coder: NSCoder) {fatalError()}
 
@@ -211,6 +216,7 @@ final class FFTView: NSView {
                 }
             }
         }
+        var boostsBaseNote: Bool = false
 
         static let labelsWithSharps = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
         static let labelsWithFlats = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
@@ -226,6 +232,7 @@ final class FFTView: NSView {
 
         let keyBackgroundLayer = CALayer() ※ {
             $0.backgroundColor = .white
+            $0.masksToBounds = true
         }
         
         var keyLabelLayers: [[CATextLayer]] = [] {
@@ -322,7 +329,7 @@ final class FFTView: NSView {
                 return (CGFloat(x) * (bounds.width - 1), CGFloat(w) * (bounds.width - 1), i, magnitudeForChannels)
             }
 
-            let keyHeight: CGFloat = 14
+            let keyHeight: CGFloat = 28
             let highlightHeight = bounds.height - keyHeight
             
             if let left = xws.first, let right = xws.last {
@@ -336,7 +343,10 @@ final class FFTView: NSView {
             xws.forEach { x, w, keyIndex, magnitudeForChannels in
                 let backgroundLayer = keyBackgroundLayers[keyIndex]
                 backgroundLayer.isHidden = false
-                backgroundLayer.frame = CGRect(x: x - w / 2, y: 0, width: w, height: bounds.height - highlightHeight)
+                let label = Self.fundamentalFrequenciesWithFlats[keyIndex].label
+                let isBlackKey = label.count > 1
+                let keyHeight = (isBlackKey ? 0.6 : 1) * keyHeight
+                backgroundLayer.frame = CGRect(x: x - w / 2, y: bounds.height - highlightHeight - keyHeight, width: w, height: keyHeight)
 
                 (magnitudeForChannels ?? []).enumerated().forEach { i, magnitude in
                     guard let magnitude = magnitude else { return }
@@ -347,14 +357,40 @@ final class FFTView: NSView {
                     let textLayer = keyLabelLayers[i][keyIndex]
                     textLayer.isHidden = false
                     textLayer.opacity = peakMagnitude >= 0.1 ? 1 : 0
-                    textLayer.frame = CGRect(x: x - 18 / 2, y: -highlightHeight + 2, width: 18, height: bounds.height)
+                    textLayer.frame = CGRect(x: x - 18 / 2, y: isBlackKey ? (-highlightHeight + 2) : (-bounds.height + 18), width: 18, height: bounds.height)
                     textLayer.transform = CATransform3DMakeScale(min(w, 18) / 18, 1, 1)
 
                     let highlightLayer = keyHighlightLayers[i][keyIndex]
                     highlightLayer.isHidden = false
                     highlightLayer.opacity = peakMagnitude >= 0.05 ? 1 : 0
 //                    let h = highlightHeight * CGFloat(0.015 + 1 / (1 + exp(-5 * (CGFloat(magnitude) - 0.5))))
-                    let h = highlightHeight * CGFloat(pow(magnitude, 1 / 1.2))// - 0.15
+
+                    // boost base note
+                    let adjustedMagnitude = {
+                        if boostsBaseNote, keyIndex > 40, peakMagnitude > 0 {
+                            var boostedMagnitude = peakMagnitude
+                            if keyIndex + 12 < magnitudesBuffer[i].count {
+                                let p = 0.75 * magnitudesBuffer[i][keyIndex + 12][magnitudesBufferIndex]
+                                boostedMagnitude += p
+                                magnitudesBuffer[i][keyIndex + 12][magnitudesBufferIndex] -= p
+                            }
+                            if keyIndex + 19 < magnitudesBuffer[i].count {
+                                let p = 0.6 * magnitudesBuffer[i][keyIndex + 19][magnitudesBufferIndex]
+                                boostedMagnitude += p
+                                magnitudesBuffer[i][keyIndex + 19][magnitudesBufferIndex] -= p
+                            }
+                            if keyIndex + 24 < magnitudesBuffer[i].count {
+                                let p = 0.3 * magnitudesBuffer[i][keyIndex + 24][magnitudesBufferIndex]
+                                boostedMagnitude += p
+                                magnitudesBuffer[i][keyIndex + 24][magnitudesBufferIndex] -= p
+                            }
+                            return boostedMagnitude
+                        } else {
+                            return magnitude
+                        }
+                    }()
+
+                    let h = highlightHeight * CGFloat(pow(adjustedMagnitude, 1 / 1.2))// - 0.15
                     highlightLayer.frame = CGRect(x: x - w / 2, y: bounds.height - highlightHeight, width: w, height: h)
                 }
             }

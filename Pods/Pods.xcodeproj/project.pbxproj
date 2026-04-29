@@ -63,7 +63,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		12835CC7E7EBF6CE9CD5D177826E4A1F /* Pods-AudioAnalyzer */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = "Pods-AudioAnalyzer"; path = Pods_AudioAnalyzer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		12835CC7E7EBF6CE9CD5D177826E4A1F /* Pods_AudioAnalyzer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AudioAnalyzer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		150BA036A0F6AABA6158B5DE29C016A6 /* Pods-AudioAnalyzer-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-AudioAnalyzer-acknowledgements.markdown"; sourceTree = "<group>"; };
 		16ECDC00C416FBB6503DA4F8D296BFAB /* NorthLayout-prefix.pch */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "NorthLayout-prefix.pch"; sourceTree = "<group>"; };
 		21CC848B0487DC4AAC3580ADE9497C8A /* ※ikemen */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = "※ikemen"; path = Ikemen.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -87,7 +87,7 @@
 		86BFEDA641BA0473D74B8C288F94D9D6 /* ※ikemen-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "※ikemen-Info.plist"; sourceTree = "<group>"; };
 		8A2C509BFF136045FDC39A8B6A8A1486 /* Error.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Error.swift; path = Sources/FootlessParser/Error.swift; sourceTree = "<group>"; };
 		8B2D394698D61FF04DA1B2C72B1E3386 /* Parsers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Parsers.swift; path = Sources/FootlessParser/Parsers.swift; sourceTree = "<group>"; };
-		9D940727FF8FB9C785EB98E56350EF41 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; indentWidth = 2; lastKnownFileType = text; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; tabWidth = 2; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		9D940727FF8FB9C785EB98E56350EF41 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; indentWidth = 2; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; tabWidth = 2; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		A1C7383254EBCAC3090CD465709EFE7C /* NorthLayout-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "NorthLayout-umbrella.h"; sourceTree = "<group>"; };
 		A2029A1B915CB5E82083477C3750EC63 /* FootlessParser.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = FootlessParser.release.xcconfig; sourceTree = "<group>"; };
 		A5EC7712D99BD3EBD6F7C05D8A526AF1 /* Pods-AudioAnalyzer.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-AudioAnalyzer.debug.xcconfig"; sourceTree = "<group>"; };
@@ -167,7 +167,6 @@
 				49F2D47419745118F47F10CA9C52C91C /* ※ikemen.swift */,
 				9CDD77F75C2B67DD77EE151816DD2E4B /* Support Files */,
 			);
-			name = "※ikemen";
 			path = "※ikemen";
 			sourceTree = "<group>";
 		};
@@ -200,7 +199,6 @@
 				F2BB1509E05189F6267F46FAACF8D84F /* StringParser.swift */,
 				DCB8D205766CAB722DF4F5CCF2EA9695 /* Support Files */,
 			);
-			name = FootlessParser;
 			path = FootlessParser;
 			sourceTree = "<group>";
 		};
@@ -212,7 +210,6 @@
 				3CE4631BECCD6CB530E8B0ACCDF0B149 /* VFLSyntax.swift */,
 				366D9311E93035E57B6C52A5C0FDEC44 /* Support Files */,
 			);
-			name = NorthLayout;
 			path = NorthLayout;
 			sourceTree = "<group>";
 		};
@@ -294,7 +291,7 @@
 			children = (
 				CE82653004A461329CB25F0C91A798CC /* FootlessParser */,
 				C2AD8B33975525AAE160012515ECBEDA /* NorthLayout */,
-				12835CC7E7EBF6CE9CD5D177826E4A1F /* Pods-AudioAnalyzer */,
+				12835CC7E7EBF6CE9CD5D177826E4A1F /* Pods_AudioAnalyzer.framework */,
 				21CC848B0487DC4AAC3580ADE9497C8A /* ※ikemen */,
 			);
 			name = Products;
@@ -356,7 +353,7 @@
 			);
 			name = "Pods-AudioAnalyzer";
 			productName = Pods_AudioAnalyzer;
-			productReference = 12835CC7E7EBF6CE9CD5D177826E4A1F /* Pods-AudioAnalyzer */;
+			productReference = 12835CC7E7EBF6CE9CD5D177826E4A1F /* Pods_AudioAnalyzer.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		A71F7E40C6D497B4D8863618F14CE1A2 /* FootlessParser */ = {

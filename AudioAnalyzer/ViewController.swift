@@ -134,6 +134,7 @@ class ViewController: NSViewController {
     @Published @objc private var selectedIndexOfLowerFrequencyPopup: Int = 0
 
     private let estimateMusicalKeysCheckbox = NSButton(checkboxWithTitle: "Keys", target: nil, action: nil)
+    private let boostsBaseCheckbox = NSButton(checkboxWithTitle: "Boost Base", target: nil, action: nil)
 
     private var session: SessionType? {
         didSet {
@@ -231,6 +232,7 @@ class ViewController: NSViewController {
             "lowerLabel": lowerLabel,
             "lowerPopup": lowerFrequencyPopup,
             "keys": estimateMusicalKeysCheckbox,
+            "boostsBase": boostsBaseCheckbox,
         ])
         autolayout("H:|-p-[inputs(>=128)]-p-[phones]-(>=p)-|")
         autolayout("H:|-p-[performance]-p-|")
@@ -242,15 +244,16 @@ class ViewController: NSViewController {
         autolayout("H:|-(>=p)-[upperLabel]-[upperPopup]-p-|")
         autolayout("H:|-(>=p)-[lowerLabel]-[lowerPopup]-p-|")
         autolayout("H:|-(>=p)-[keys]-p-|")
+        autolayout("H:|-(>=p)-[boostsBase]-p-|")
         autolayout("H:|-(>=p)-[analysisFrequencyAxisModePopup]-p-|")
         autolayout("V:|-p-[inputs]-p-[performance]-p-[monitorCheckbox]-p-[levels]")
         autolayout("V:|-p-[phones(inputs)]-p-[performance]-p-[monitorVolume]-p-[levels]")
         autolayout("V:[levels]-p-[analysis(>=128)]-p-|")
-        autolayout("V:[levels]-p-[analysisPopup]-[analysisFrequencyAxisModePopup]-[upperPopup]-[lowerPopup]-[keys]-(>=96)-|")
+        autolayout("V:[levels]-p-[analysisPopup]-[analysisFrequencyAxisModePopup]-[upperPopup]-[lowerPopup]-[keys]-[boostsBase]-(>=96)-|")
         analysisLabel.centerYAnchor.constraint(equalTo: analysisPopup.centerYAnchor).isActive = true
         upperLabel.centerYAnchor.constraint(equalTo: upperFrequencyPopup.centerYAnchor).isActive = true
         lowerLabel.centerYAnchor.constraint(equalTo: lowerFrequencyPopup.centerYAnchor).isActive = true
-        [analysisLabel, analysisPopup, upperLabel, upperFrequencyPopup, lowerLabel, lowerFrequencyPopup, estimateMusicalKeysCheckbox].forEach {
+        [analysisLabel, analysisPopup, upperLabel, upperFrequencyPopup, lowerLabel, lowerFrequencyPopup, estimateMusicalKeysCheckbox, boostsBaseCheckbox].forEach {
             view.addSubview($0, positioned: .above, relativeTo: analysisView)
         }
 
@@ -304,6 +307,10 @@ class ViewController: NSViewController {
 
         estimateMusicalKeysCheckbox.publisherForStateOnOff()
             .assign(to: \.estimateMusicalKeys, on: analysisView)
+            .store(in: &cancellables)
+
+        boostsBaseCheckbox.publisherForStateOnOff()
+            .assign(to: \.boostsBaseNoteInKeys, on: analysisView)
             .store(in: &cancellables)
     }
 
